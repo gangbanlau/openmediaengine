@@ -1,6 +1,21 @@
+/* 
+ * Copyright (C) 2009 Gang Liu <gangban.lau@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
+ */
 #include "utils.h"
-
-#include "g729.h"
 
 #include <list>
 
@@ -11,7 +26,7 @@ extern struct voxve_data voxve_var;
 /* 
  * Register all codecs. 
  */
-pj_status_t init_codecs(pjmedia_endpt *med_endpt)
+pj_status_t codecs_init(pjmedia_endpt *med_endpt)
 {
     pj_status_t status;
 
@@ -38,16 +53,10 @@ pj_status_t init_codecs(pjmedia_endpt *med_endpt)
     PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
 #endif
 
-	/* IPP G729 */
-#ifdef HAS_IPP 
-	status = pjmedia_codec_ipp_g729_init(med_endpt);
-	PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
-#endif
-
     return PJ_SUCCESS;
 }
 
-pj_status_t deinit_codecs(pjmedia_endpt *med_endpt)
+pj_status_t codecs_deinit(pjmedia_endpt *med_endpt)
 {
     pj_status_t status;
 
@@ -74,12 +83,6 @@ pj_status_t deinit_codecs(pjmedia_endpt *med_endpt)
     PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
 #endif
 
-	/* IPP G729 */
-#ifdef HAS_IPP
-	status = pjmedia_codec_ipp_g729_deinit();
-	PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
-#endif
-
     return PJ_SUCCESS;
 }
 
@@ -92,7 +95,7 @@ pj_atomic_value_t getavailableid(pj_atomic_t * atomic_var)
 /* 
  * Create stream based on the codec, dir, remote address, etc. 
  */
-pj_status_t create_stream( pj_pool_t *pool,
+pj_status_t stream_create( pj_pool_t *pool,
 				  pjmedia_endpt *med_endpt,
 				  const pjmedia_codec_info *codec_info,
 				  unsigned int ptime,
@@ -262,7 +265,7 @@ pj_status_t logging_reconfigure(const voxve_logging_config_t *cfg)
 }
 
 /* Close existing sound device */
-void close_snd_dev(pjmedia_snd_port *snd_port)
+void snd_close(pjmedia_snd_port *snd_port)
 {
     /* Close sound device */
     if (snd_port != NULL) {
@@ -271,7 +274,7 @@ void close_snd_dev(pjmedia_snd_port *snd_port)
     }
 }
 
-voxve_conf_t * find_conf_bridge(int conf_id)
+voxve_conf_t * conf_find(int conf_id)
 {
 	voxve_conf_t * conf = NULL;
 	pj_rwmutex_lock_read(voxve_var.activeconfs_rwmutex);
@@ -286,7 +289,7 @@ voxve_conf_t * find_conf_bridge(int conf_id)
 	return conf;
 }
 
-voxve_channel_t * find_channel(int channel_id)
+voxve_channel_t * channel_find(int channel_id)
 {
 	voxve_channel_t * channel = NULL;
 //	pj_status_t status; 

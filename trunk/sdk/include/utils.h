@@ -1,3 +1,20 @@
+/* 
+ * Copyright (C) 2009 Gang Liu <gangban.lau@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
+ */
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
@@ -20,8 +37,7 @@ enum VOXVE_LOG_LEVEL
 /* Channel */
 typedef struct voxve_channel
 {
-	/* unique id */
-	int id;
+	int id;								/* unique id */
 
 	pjmedia_stream *stream;
 
@@ -41,8 +57,7 @@ typedef struct voxve_channel
 /* Conference bridge */
 typedef struct voxve_conf
 {
-	/* unique id */
-	int id;
+	int id;											/* unique id */
 
 	pjmedia_conf *p_conf;
 	
@@ -169,11 +184,15 @@ struct voxve_data
     unsigned		max_media_ports;
 };
 
-pj_status_t init_codecs(pjmedia_endpt *med_endpt);
 
-pj_status_t deinit_codecs(pjmedia_endpt *med_endpt);
+/** Codec **/
+pj_status_t codecs_init(pjmedia_endpt *med_endpt);
 
-pj_status_t create_stream( pj_pool_t *pool,
+pj_status_t codecs_deinit(pjmedia_endpt *med_endpt);
+
+
+/** Stream **/
+pj_status_t stream_create( pj_pool_t *pool,
 				  pjmedia_endpt *med_endpt,
 				  const pjmedia_codec_info *codec_info,
 				  unsigned int ptime,
@@ -183,23 +202,30 @@ pj_status_t create_stream( pj_pool_t *pool,
 				  const pj_sockaddr_in *rem_addr,
 				  pjmedia_stream **p_stream );
 
-void close_snd_dev(pjmedia_snd_port *snd_port);
 
-/* Get available id */
-pj_atomic_value_t getavailableid(pj_atomic_t * atomic_var);
+/** Sound device **/
+void snd_close(pjmedia_snd_port *snd_port);
 
+
+/**  Conference Bridge **/
 /* Use conference unique id to find instance */
-voxve_conf_t * find_conf_bridge(int conf_id);
+voxve_conf_t * conf_find(int conf_id);
 
-voxve_channel_t * find_channel(int channel_id);
+voxve_channel_t * channel_find(int channel_id);
 
+
+/* Logging */
 void logging_config_default(voxve_logging_config *cfg);
 
 pj_status_t logging_reconfigure(const voxve_logging_config_t *cfg);
 
-/* Log */
 void logging(const char *sender, VOXVE_LOG_LEVEL log_level, const char *title, pj_status_t status);
 
+
+/** Misc **/
 void register_thread();
+
+/* Get available id */
+pj_atomic_value_t getavailableid(pj_atomic_t * atomic_var);
 
 #endif // _UTILS_H_
