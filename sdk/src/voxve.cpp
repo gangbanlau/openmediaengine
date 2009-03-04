@@ -1,10 +1,23 @@
-/* Include all PJLIB headers. */
+/* 
+ * Copyright (C) 2009 Gang Liu <gangban.lau@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
+ */
 #include <pjlib.h>
-/* Include all PJLIB-UTIL headers. */
 #include <pjlib-util.h>
-/* Include all PJMEDIA headers. */
 #include <pjmedia.h>
-/* Include all PJMEDIA-CODEC headers. */
 #include <pjmedia-codec.h>
 
 #include <map>
@@ -31,7 +44,7 @@
 #define SND_DEFAULT_REC_LATENCY		100
 #define SND_DEFAULT_PLAY_LATENCY	100
 
-/* Windows Vista Issue */
+/* TODO Windows Vista Issue */
 /* if SND_DEFAULT_REC_LATENCY 40 and SND_DEFAULT_PLAY_LATENCY 40, then Voice playback choppy */
 /* if DEFAULT_CLOCK_RATE 8000 and SND_DEFAULT_CLOCK_RATE 44000, then Voice playback no sound */
 
@@ -160,14 +173,14 @@ voxve_status_t voxve_init(int month, int day, int year)
 
     /* Create memory pool for application purpose */
 	voxve_var.pool = pj_pool_create( &voxve_var.cp.factory,	    /* pool factory	    */
-			   "voxve",	    /* pool name.	    */
+			   "openmediaengine",	    /* pool name.	    */
 			   4000,	    /* init size	    */
 			   4000,	    /* increment size	    */
 			   NULL		    /* callback on error    */
 			   );
 
     /* Register all supported codecs */
-    status = init_codecs(voxve_var.med_endpt);
+    status = codecs_init(voxve_var.med_endpt);
     PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
 
 	/* Atomic Variables, available id */
@@ -415,7 +428,7 @@ voxve_status_t voxve_channel_startstream2(int channel_id, voxve_codec_id_t codec
 		    return -1;
 	}
 
-	voxve_channel_t * channel = find_channel(channel_id);
+	voxve_channel_t * channel = channel_find(channel_id);
 
 	if (channel == NULL)
 	{
@@ -424,7 +437,7 @@ voxve_status_t voxve_channel_startstream2(int channel_id, voxve_codec_id_t codec
 
     /* Create stream based on arguments */
 	pjmedia_stream *stream = NULL;
-	status = create_stream(voxve_var.pool, voxve_var.med_endpt, codec_info, ptime, rtp_ssrc, pj_dir, channel->transport, 
+	status = stream_create(voxve_var.pool, voxve_var.med_endpt, codec_info, ptime, rtp_ssrc, pj_dir, channel->transport, 
 			   &remote_addr, &stream);
 
 	if (status != PJ_SUCCESS)
@@ -451,7 +464,7 @@ voxve_status_t voxve_channel_stopstream(int channel_id)
 {
 	register_thread();
 
-	voxve_channel_t *channel = find_channel(channel_id);
+	voxve_channel_t *channel = channel_find(channel_id);
 
 	if (channel == NULL)
 		return -1;
@@ -493,7 +506,7 @@ voxve_status_t voxve_channel_delete(int channelid)
 		/* Destroy sound device first before stream */
 		if (channel->snd_port != NULL) 
 		{
-			close_snd_dev(channel->snd_port);
+			snd_close(channel->snd_port);
 			channel->snd_port = NULL;
 		}
 
@@ -535,7 +548,7 @@ voxve_status_t voxve_channel_startplayout(int channelid)
 {
 	register_thread();
 
-	voxve_channel_t * channel = find_channel(channelid);
+	voxve_channel_t * channel = channel_find(channelid);
 	pj_status_t status; 
 
 	if (channel != NULL)
@@ -582,13 +595,13 @@ voxve_status_t voxve_channel_stopplayout(int channelid)
 {
 	register_thread();
 
-	voxve_channel_t * channel = find_channel(channelid);
+	voxve_channel_t * channel = channel_find(channelid);
 
 	if (channel != NULL)
 	{
 		if (channel->snd_port != NULL)
 		{
-			close_snd_dev(channel->snd_port);
+			snd_close(channel->snd_port);
 			channel->snd_port = NULL;
 		}
 
@@ -625,7 +638,7 @@ voxve_status_t voxve_channel_update(int channel_id, voxve_codec_id_t codec, unsi
 {
 	register_thread();
 
-	voxve_channel_t * channel = find_channel(channel_id);
+	voxve_channel_t * channel = channel_find(channel_id);
 	pj_status_t status;
 	bool connected_snd = false;
 
@@ -635,7 +648,7 @@ voxve_status_t voxve_channel_update(int channel_id, voxve_codec_id_t codec, unsi
 	/* Destroy sound device first before stream */
 	if (channel->snd_port != NULL)
 	{
-		close_snd_dev(channel->snd_port);
+		snd_close(channel->snd_port);
 		channel->snd_port = NULL;
 
 		connected_snd = true;
@@ -697,7 +710,7 @@ voxve_status_t voxve_shutdown()
 		/* Destroy sound device */
 		if (channel->snd_port != NULL) 
 		{
-			close_snd_dev(channel->snd_port);
+			snd_close(channel->snd_port);
 			channel->snd_port = NULL;
 		}
 
@@ -742,7 +755,7 @@ voxve_status_t voxve_shutdown()
 
 	pj_rwmutex_destroy(voxve_var.activeconfs_rwmutex);
 
-	deinit_codecs(voxve_var.med_endpt);
+	codecs_deinit(voxve_var.med_endpt);
 
 	/* Release application pool */
 	pj_pool_release(voxve_var.pool);
@@ -891,7 +904,7 @@ voxve_status_t voxve_conf_destroy(int conf_id)
 
 		if (conf->snd_port != NULL)
 		{
-			close_snd_dev(conf->snd_port);
+			snd_close(conf->snd_port);
 			conf->snd_port = NULL;
 		}
 
@@ -913,7 +926,7 @@ int voxve_conf_addchannel(int conf_id, int channel_id)
 {
 	register_thread();
 
-	voxve_channel_t * channel = find_channel(channel_id);
+	voxve_channel_t * channel = channel_find(channel_id);
 
 	if (channel == NULL)
 	{
@@ -921,7 +934,7 @@ int voxve_conf_addchannel(int conf_id, int channel_id)
 		return -1;
 	}
 
-	voxve_conf_t * conf = find_conf_bridge(conf_id);
+	voxve_conf_t * conf = conf_find(conf_id);
 
 	if (conf == NULL)
 	{
@@ -961,7 +974,7 @@ voxve_status_t voxve_conf_removechannel(int conf_id, int channel_id)
 {
 	register_thread();
 
-	voxve_conf_t * conf = find_conf_bridge(conf_id);
+	voxve_conf_t * conf = conf_find(conf_id);
 
 	if (conf == NULL)
 	{
@@ -969,7 +982,7 @@ voxve_status_t voxve_conf_removechannel(int conf_id, int channel_id)
 		return -1;
 	}
 
-	voxve_channel_t * channel = find_channel(channel_id);
+	voxve_channel_t * channel = channel_find(channel_id);
 
 	if (channel == NULL)
 	{
@@ -991,7 +1004,7 @@ voxve_status_t voxve_conf_connect(int conf_id, unsigned source_slot, unsigned ds
 {
 	register_thread();
 
-	voxve_conf_t * conf = find_conf_bridge(conf_id);
+	voxve_conf_t * conf = conf_find(conf_id);
 
 	if (conf == NULL)
 	{
@@ -1006,7 +1019,7 @@ voxve_status_t voxve_conf_disconnect(int conf_id, unsigned source_slot, unsigned
 {
 	register_thread();
 
-	voxve_conf_t * conf = find_conf_bridge(conf_id);
+	voxve_conf_t * conf = conf_find(conf_id);
 
 	if (conf == NULL)
 	{
@@ -1024,7 +1037,7 @@ voxve_status_t voxve_conf_setsnddev(int conf_id, int cap_dev, int playback_dev)
 
 	pj_status_t status; 
 
-	voxve_conf_t * conf = find_conf_bridge(conf_id);
+	voxve_conf_t * conf = conf_find(conf_id);
 
 	if (conf == NULL)
 	{
@@ -1039,7 +1052,7 @@ voxve_status_t voxve_conf_setsnddev(int conf_id, int cap_dev, int playback_dev)
 			return 0;
 		}
 		
-		close_snd_dev(conf->snd_port);
+		snd_close(conf->snd_port);
 		conf->snd_port = NULL;
 	} 
 	else {
@@ -1084,7 +1097,7 @@ voxve_status_t voxve_conf_setnosnddev(int conf_id)
 
 	pj_status_t status; 
 
-	voxve_conf_t * conf = find_conf_bridge(conf_id);
+	voxve_conf_t * conf = conf_find(conf_id);
 
 	if (conf == NULL)
 	{
@@ -1094,7 +1107,7 @@ voxve_status_t voxve_conf_setnosnddev(int conf_id)
 
 	if (conf->snd_port != NULL)
 	{
-		close_snd_dev(conf->snd_port);
+		snd_close(conf->snd_port);
 		conf->snd_port = NULL;
 	}
 
@@ -1138,7 +1151,7 @@ int voxve_conf_getportcount(int conf_id)
 {
 	register_thread();
 
-	voxve_conf_t * conf = find_conf_bridge(conf_id);
+	voxve_conf_t * conf = conf_find(conf_id);
 
 	if (conf != NULL)
 	{
@@ -1152,7 +1165,7 @@ int voxve_conf_getconnectcount(int conf_id)
 {
 	register_thread();
 
-	voxve_conf_t * conf = find_conf_bridge(conf_id);
+	voxve_conf_t * conf = conf_find(conf_id);
 
 	if (conf != NULL)
 	{
@@ -1167,7 +1180,7 @@ voxve_status_t voxve_conf_getsignallevel(int conf_id, unsigned slot, unsigned *t
 {
 	register_thread();
 
-	voxve_conf_t * conf = find_conf_bridge(conf_id);
+	voxve_conf_t * conf = conf_find(conf_id);
 
 	if (conf != NULL)
 	{
@@ -1181,7 +1194,7 @@ voxve_status_t voxve_conf_adjustrxlevel(int conf_id, unsigned slot, int adj_leve
 {
 	register_thread();
 
-	voxve_conf_t * conf = find_conf_bridge(conf_id);
+	voxve_conf_t * conf = conf_find(conf_id);
 
 	if (conf != NULL)
 	{
@@ -1195,7 +1208,7 @@ voxve_status_t voxve_conf_adjusttxlevel(int conf_id, unsigned slot, int adj_leve
 {
 	register_thread();
 
-	voxve_conf_t * conf = find_conf_bridge(conf_id);
+	voxve_conf_t * conf = conf_find(conf_id);
 
 	if (conf != NULL)
 	{
@@ -1248,7 +1261,7 @@ voxve_status_t voxve_conf_configureport(int conf_id, unsigned slot, voxve_port_o
 		r_op = PJMEDIA_PORT_NO_CHANGE;
 	}
 
-	voxve_conf_t * conf = find_conf_bridge(conf_id);
+	voxve_conf_t * conf = conf_find(conf_id);
 
 	if (conf != NULL)
 	{
@@ -1262,7 +1275,7 @@ voxve_status_t voxve_dtmf_dial(int channel_id, char *ascii_digit)
 {
 	register_thread();
 
-	voxve_channel_t * channel = find_channel(channel_id);
+	voxve_channel_t * channel = channel_find(channel_id);
 
 	if (channel != NULL)
 	{
