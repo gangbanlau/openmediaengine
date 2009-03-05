@@ -26,6 +26,7 @@ using namespace std;
 int main(int argc, char ** argv)
 {
 	voxve_status_t status;
+	char errMsg[256];
 
 	if (argc != 10)
 	{
@@ -67,44 +68,47 @@ int main(int argc, char ** argv)
 	cout << "remote_port " << remote_port << endl;
 
 	status = voxve_init(0, 0, 0);
-	if (status != 0)	return status;
+	if (status != 0)
+	{
+		voxve_strerror(status, errMsg, sizeof(errMsg));
+		cout << "Err: " << errMsg << endl;
+		return status;
+	}
 
 	if (stereo)
 	{
+		cout << "Stereo enabled" << endl;
 		voxve_enable_stereo();
-		cout << "Stereo " << endl;
 	}
 	else {
+		cout << "Mono enabled" << endl;
 		voxve_disable_stereo();
-		cout << "Mono " << endl;
 	}
 
 	if (vad)
 	{
-		voxve_enable_vad();
 		cout << "VAD enabled " << endl;
+		voxve_enable_vad();
 	}
 	else
 	{
-		voxve_disable_vad();
 		cout << "VAD disabled " << endl;
+		voxve_disable_vad();
 	}
 
 	if (ec_tail_ms > 0)
 	{
-		voxve_snd_set_ec(ec_tail_ms);
 		cout << "AEC enabled " << endl;
+		voxve_snd_set_ec(ec_tail_ms);
 	}
 	else {
-		voxve_snd_set_ec(0);
 		cout << "AEC disabled " << endl;
+		voxve_snd_set_ec(0);
 	}
 
 	voxve_snd_set_clockrate(snd_clock_rate);
 	
 	voxve_conf_set_clockrate(clock_rate);
-
-	cout << "Case: Create channel and delete channel" << endl;
 
 	int channel_id = voxve_channel_create(local_port);
 
@@ -112,91 +116,44 @@ int main(int argc, char ** argv)
 
 	if (channel_id == -1)
 		cout << "Create channel error" << endl;
-	else {
-		cin >> go;
-
-		status = voxve_channel_delete(channel_id);
-		if (status != 0)	return status;
-
-		cin >> go;
-
-		channel_id = voxve_channel_create(local_port);
-		
+	else {		
 		status = voxve_channel_startstream(channel_id, codec, 20, remote_ip, remote_port, STREAM_DIR_ENCODING_DECODING);
-		if (status != 0)	return status;
-
-		cin >> go;
-
-		status = voxve_channel_stopstream(channel_id);
-		if (status != 0)	return status;
-
-		status = voxve_channel_startstream(channel_id, codec, 20, remote_ip, remote_port, STREAM_DIR_ENCODING_DECODING);
-		if (status != 0)	return status;
+		if (status != 0)	goto on_error;
 		
 		status = voxve_channel_startplayout(channel_id);
-		if (status != 0)	return status;
+		if (status != 0)	goto on_error;
 		
-		cin >> go;
-
-		status = voxve_dtmf_dial(channel_id, "1234567890*#");
-		if (status != 0)
-		{
-			char buf[256];
-			voxve_strerror(status, buf, sizeof(buf) - 1);
-
-			cout << buf << endl;
-
-			return status;
-		}
-
 		cin >> go;
 
 		status = voxve_channel_stopplayout(channel_id);
-		if (status != 0)	return status;
-
-		status = voxve_channel_startplayout(channel_id);
-		if (status != 0)	return status;
-		
-		status = voxve_channel_putonhold(channel_id, true);
-		if (status != 0)	return status;
-		
-		cin >> go;
-
-		status = voxve_channel_putonhold(channel_id, false);
-		if (status != 0)	return status;
-		
-		cin >> go;
-
-		status = voxve_channel_update(channel_id, CODEC_PCMA, 20, 5002, "192.168.0.180", 40002, STREAM_DIR_ENCODING_DECODING);
-		if (status != 0)	return status;
-
-		cin >> go;
-
-		status = voxve_channel_update(channel_id, CODEC_PCMU, 20, 5000, "192.168.0.180", 40000, STREAM_DIR_ENCODING_DECODING);
-		if (status != 0)	return status;
-
-		cin >> go;
-
-		status = voxve_channel_stopplayout(channel_id);
-		if (status != 0)	return status;
-
-		cin >> go;
+		if (status != 0)	goto on_error;
 
 		status = voxve_channel_stopstream(channel_id);
-		if (status != 0)	return status;
-
-		cin >> go;
+		if (status != 0)	goto on_error;
 
 		status = voxve_channel_delete(channel_id);
-		if (status != 0)	return status;
-
-		cin >> go;
+		if (status != 0)	goto on_error;
 	}
 
 	status = voxve_shutdown();
-	if (status != 0)	return status;
-	
-	cout << "Done" << endl;
+	if (status != 0)
+	{
+		voxve_strerror(status, errMsg, sizeof(errMsg));
+		cout << "Err: " << errMsg << endl;
+		return status;
+	}
+	else {
+		cout << "Done" << endl;
 
-	return 0;
+		return 0;
+	}
+
+on_error:
+	voxve_strerror(status, errMsg, sizeof(errMsg));
+
+	cout << "Err: " << errMsg << endl;
+	
+	voxve_shutdown();
+
+	return status;
 }
