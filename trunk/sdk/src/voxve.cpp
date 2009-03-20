@@ -424,7 +424,8 @@ voxve_status_t voxve_channel_startstream2(int channel_id, voxve_codec_id_t codec
 	pj_uint16_t port = (pj_uint16_t)remote_port;
 
 	status = pj_sockaddr_in_init(&remote_addr, &ip, port);
-	if (status != PJ_SUCCESS) {
+	if (status != PJ_SUCCESS) 
+	{
 		    return -1;
 	}
 

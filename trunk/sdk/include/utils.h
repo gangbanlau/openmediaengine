@@ -214,7 +214,7 @@ voxve_conf_t * conf_find(int conf_id);
 voxve_channel_t * channel_find(int channel_id);
 
 
-/* Logging */
+/** Logging **/
 void logging_config_default(voxve_logging_config *cfg);
 
 pj_status_t logging_reconfigure(const voxve_logging_config_t *cfg);

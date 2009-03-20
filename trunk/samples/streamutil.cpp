@@ -112,8 +112,6 @@ int main(int argc, char ** argv)
 
 	int channel_id = voxve_channel_create(local_port);
 
-	char go;
-
 	if (channel_id == -1)
 		cout << "Create channel error" << endl;
 	else {		
@@ -123,7 +121,7 @@ int main(int argc, char ** argv)
 		status = voxve_channel_startplayout(channel_id);
 		if (status != 0)	goto on_error;
 		
-		cin >> go;
+		cin.get();
 
 		status = voxve_channel_stopplayout(channel_id);
 		if (status != 0)	goto on_error;

@@ -120,7 +120,7 @@ pj_status_t stream_create( pj_pool_t *pool,
 		info.ssrc = pj_rand();										/* RTP SSRC. */
 	else
 		info.ssrc = rtp_ssrc;
-	info.tx_event_pt = 101;											/* Remote support RFC 2833, otherwise we can't use pjmedia_stream_dial_dtmf(), check PJSIP FAQ about DTMF */
+	info.tx_event_pt = 101;											/* Remote support telephone-events RFC 2833, otherwise we can't use pjmedia_stream_dial_dtmf(), check PJSIP FAQ about DTMF */
 
 	pjmedia_codec_param param;
 	pjmedia_codec_mgr *codec_mgr = pjmedia_endpt_get_codec_mgr(voxve_var.med_endpt);
@@ -154,7 +154,8 @@ pj_status_t stream_create( pj_pool_t *pool,
      */
     status = pjmedia_stream_create( med_endpt, pool, &info, transport, NULL, p_stream);
 
-    if (status != PJ_SUCCESS) {
+    if (status != PJ_SUCCESS) 
+	{
 		return status;
     }
 
@@ -182,7 +183,8 @@ static void log_writer(int level, const char *buffer, int len)
 {
     /* Write to file, stdout or application callback. */
 
-    if (voxve_var.log_file) {
+    if (voxve_var.log_file) 
+	{
 		pj_ssize_t size = len;
 		pj_file_write(voxve_var.log_file, buffer, &size);
 		/* This will slow things down considerably! Don't do it!
@@ -190,7 +192,8 @@ static void log_writer(int level, const char *buffer, int len)
 		*/
     }
 
-    if (level <= (int)voxve_var.log_cfg.console_level) {
+    if (level <= (int)voxve_var.log_cfg.console_level) 
+	{
 		if (voxve_var.log_cfg.cb)
 			(*voxve_var.log_cfg.cb)(level, buffer, len);
 		else
@@ -243,19 +246,22 @@ pj_status_t logging_reconfigure(const voxve_logging_config_t *cfg)
     pj_log_set_decor(voxve_var.log_cfg.decor);
 
     /* Close existing file, if any */
-    if (voxve_var.log_file) {
+    if (voxve_var.log_file) 
+	{
 		pj_file_close(voxve_var.log_file);
 		voxve_var.log_file = NULL;
     }
 
     /* If output log file is desired, create the file: */
-    if (voxve_var.log_cfg.log_filename.slen) {
+    if (voxve_var.log_cfg.log_filename.slen) 
+	{
 		status = pj_file_open(voxve_var.pool, 
 			      voxve_var.log_cfg.log_filename.ptr,
 			      PJ_O_WRONLY, 
 			      &voxve_var.log_file);
 
-		if (status != PJ_SUCCESS) {
+		if (status != PJ_SUCCESS) 
+		{
 			logging(THIS_FILE, VOXVE_LOG_WARN, "Create log file", status);
 			return status;
 		}
@@ -268,7 +274,8 @@ pj_status_t logging_reconfigure(const voxve_logging_config_t *cfg)
 void snd_close(pjmedia_snd_port *snd_port)
 {
     /* Close sound device */
-    if (snd_port != NULL) {
+    if (snd_port != NULL) 
+	{
 		pjmedia_snd_port_disconnect(snd_port);
 		pjmedia_snd_port_destroy(snd_port);
     }
@@ -321,7 +328,8 @@ void register_thread()
 {
 	voxve_external_thread * e_thread = new voxve_external_thread;
 
-	if(!pj_thread_is_registered()) {
+	if(!pj_thread_is_registered()) 
+	{
 
 		pj_thread_register(NULL, e_thread->desc, &(e_thread->thread));
 
