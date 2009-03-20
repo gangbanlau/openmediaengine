@@ -83,7 +83,7 @@ OPENMEDIAENGINE_DLL_API voxve_status_t voxve_authenticate(char *auth_string, int
 
 
 
-/** ############ Mic/Speaker functions #### **/
+/** ############ Microphone/Speaker functions #### **/
 
 /** Get count of sound devices **/ 
 OPENMEDIAENGINE_DLL_API int voxvx_snd_getcount();
@@ -117,7 +117,7 @@ OPENMEDIAENGINE_DLL_API void voxve_snd_set_clockrate(unsigned snd_clock_rate);
 
 
 
-/** ############ Audio functions ################## **/
+/** ############ Audio advanced setting ################## **/
 
 /** Enable VAD **/
 OPENMEDIAENGINE_DLL_API void voxve_enable_vad();
@@ -125,10 +125,10 @@ OPENMEDIAENGINE_DLL_API void voxve_enable_vad();
 /** Disable VAD **/
 OPENMEDIAENGINE_DLL_API void voxve_disable_vad();
 
-/* Stereo */
+/* Enable Stereo */
 OPENMEDIAENGINE_DLL_API void voxve_enable_stereo();
 
-/* Mono */
+/* Disable Stereo */
 OPENMEDIAENGINE_DLL_API void voxve_disable_stereo();
 
 
