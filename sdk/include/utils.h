@@ -207,11 +207,13 @@ pj_status_t stream_create( pj_pool_t *pool,
 void snd_close(pjmedia_snd_port *snd_port);
 
 
+/** Channel **/
+voxve_channel_t * channel_find(int channel_id);
+
+
 /**  Conference Bridge **/
 /* Use conference unique id to find instance */
 voxve_conf_t * conf_find(int conf_id);
-
-voxve_channel_t * channel_find(int channel_id);
 
 
 /** Logging **/
@@ -223,6 +225,7 @@ void logging(const char *sender, VOXVE_LOG_LEVEL log_level, const char *title, p
 
 
 /** Misc **/
+/* Register thread to pjlib */
 void register_thread();
 
 /* Get available id */
