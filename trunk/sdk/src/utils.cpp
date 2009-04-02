@@ -152,7 +152,7 @@ pj_status_t stream_create( pj_pool_t *pool,
     /* Now that the stream info is initialized, we can create the 
      * stream.
      */
-    status = pjmedia_stream_create( med_endpt, pool, &info, transport, NULL, p_stream);
+    status = pjmedia_stream_create(med_endpt, pool, &info, transport, NULL, p_stream);
 
     if (status != PJ_SUCCESS) 
 	{
@@ -335,7 +335,7 @@ void register_thread()
 
 //		pj_thread_register(NULL, desc, &thread);
 
-		PJ_LOG(4, (THIS_FILE, "Register external thread into VE"));
+		PJ_LOG(4, (THIS_FILE, "Register external thread to pjlib"));
 
 		registered_threads.push_back(e_thread);
 	}
