@@ -15,6 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
+
 #include "utils.h"
 
 #include <list>
@@ -103,7 +104,7 @@ pj_status_t stream_create( pj_pool_t *pool,
 				  pjmedia_dir dir,
 				  pjmedia_transport *transport,
 				  const pj_sockaddr_in *rem_addr,
-				  pjmedia_stream **p_stream )
+				  pjmedia_stream **p_stream)
 {
     pjmedia_stream_info info;
     pj_status_t status;
@@ -167,8 +168,8 @@ void logging_config_default(voxve_logging_config *cfg)
 {
     pj_bzero(cfg, sizeof(*cfg));
 
-    cfg->level = 5;
-    cfg->console_level = 4;
+    cfg->level = 3;
+    cfg->console_level = 3;
     cfg->decor = PJ_LOG_HAS_SENDER | PJ_LOG_HAS_TIME | PJ_LOG_HAS_MICRO_SEC | PJ_LOG_HAS_NEWLINE;
 }
 
@@ -209,23 +210,33 @@ void logging(const char *sender, VOXVE_LOG_LEVEL log_level, const char *title, p
 
 	switch(log_level)
 	{
+#if PJ_LOG_MAX_LEVEL >= 1
 	case VOXVE_LOG_ERR:
 		PJ_LOG(1,(sender, "%s: %s [status=%d]", title, msg, status));
 		break;
+#endif
+#if PJ_LOG_MAX_LEVEL >= 2
 	case VOXVE_LOG_WARN:
 		PJ_LOG(2,(sender, "%s: %s [status=%d]", title, msg, status));
 		break;
+#endif
+#if PJ_LOG_MAX_LEVEL >= 3
 	case VOXVE_LOG_INFO:
 		PJ_LOG(3,(sender, "%s: %s [status=%d]", title, msg, status));
 		break;
+#endif
+#if PJ_LOG_MAX_LEVEL >= 4
 	case VOXVE_LOG_DEBUG:
 		PJ_LOG(4,(sender, "%s: %s [status=%d]", title, msg, status));
 		break;
+#endif
+#if PJ_LOG_MAX_LEVEL >= 5
 	case VOXVE_LOG_TRACE:
 		PJ_LOG(5,(sender, "%s: %s [status=%d]", title, msg, status));
 		break;
 	default:
 		PJ_LOG(5,(sender, "%s: %s [status=%d]", title, msg, status));
+#endif
 	}
 }
 
@@ -270,49 +281,6 @@ pj_status_t logging_reconfigure(const voxve_logging_config_t *cfg)
     return PJ_SUCCESS;
 }
 
-/* Close existing sound device */
-void snd_close(pjmedia_snd_port *snd_port)
-{
-    /* Close sound device */
-    if (snd_port != NULL) 
-	{
-		pjmedia_snd_port_disconnect(snd_port);
-		pjmedia_snd_port_destroy(snd_port);
-    }
-}
-
-voxve_conf_t * conf_find(int conf_id)
-{
-	voxve_conf_t * conf = NULL;
-	pj_rwmutex_lock_read(voxve_var.activeconfs_rwmutex);
-	std::map<int, voxve_conf_t*>::iterator iter2 = voxve_var.activeconfs.find(conf_id);
-
-	if (iter2 != voxve_var.activeconfs.end())
-	{
-		conf = (*iter2).second;
-	}
-	pj_rwmutex_unlock_read(voxve_var.activeconfs_rwmutex);
-
-	return conf;
-}
-
-voxve_channel_t * channel_find(int channel_id)
-{
-	voxve_channel_t * channel = NULL;
-//	pj_status_t status; 
-
-	pj_rwmutex_lock_read(voxve_var.activechannels_rwmutex);
-	std::map<int, voxve_channel_t*>::iterator iter = voxve_var.activechannels.find(channel_id);
-
-	if (iter != voxve_var.activechannels.end())
-	{
-		channel = (*iter).second;
-	}
-	pj_rwmutex_unlock_read(voxve_var.activechannels_rwmutex);
-
-	return channel;
-}
-
 typedef struct voxve_external_thread
 {
 	pj_thread_t *thread;
@@ -320,9 +288,6 @@ typedef struct voxve_external_thread
 } voxve_external_thread;
 
 static std::list<voxve_external_thread *> registered_threads;
-
-//static pj_thread_desc desc;
-//static pj_thread_t *  thread;
 
 void register_thread()
 {
@@ -333,9 +298,7 @@ void register_thread()
 
 		pj_thread_register(NULL, e_thread->desc, &(e_thread->thread));
 
-//		pj_thread_register(NULL, desc, &thread);
-
-		PJ_LOG(4, (THIS_FILE, "Register external thread to pjlib"));
+		PJ_LOG(4, (THIS_FILE, "Register external thread"));
 
 		registered_threads.push_back(e_thread);
 	}

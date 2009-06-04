@@ -15,24 +15,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
-#include "voxve_log.h"
+#ifndef _TIMER_H_
+#define _TIMER_H_
 
-#include "utils.h"
+#include <pjlib.h>
+#include <pjlib-util.h>
 
-voxve_status_t voxve_logging_reconfigure(int log_level, int console_log_level, const char * filename)
-{
-	voxve_logging_config_t config;
+pj_status_t timer_heap_init();
 
-	// Logging default setting
-	logging_config_default(&config);
+pj_status_t timer_heap_destroy();
 
-	config.level = log_level;
-	config.console_level = console_log_level;
+int timer_heap_handle_events(unsigned msec_timeout);
 
-	if (filename != NULL)
-	{
-		config.log_filename = pj_str((char *)filename);
-	}
-
-	return logging_reconfigure(&config);
-}
+#endif // _TIMER_H_

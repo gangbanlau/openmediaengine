@@ -15,24 +15,23 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
-#include "voxve_log.h"
+#ifndef _NAT_HELPER_H_
+#define _NAT_HELPER_H_
 
-#include "utils.h"
+#include <pjlib.h>
+#include <pjlib-util.h>
+#include <pjmedia.h>
+#include <pjmedia-codec.h>
 
-voxve_status_t voxve_logging_reconfigure(int log_level, int console_log_level, const char * filename)
-{
-	voxve_logging_config_t config;
+/*
+ * Resolve STUN server.
+ */
+pj_status_t stun_resolve_server(pj_bool_t wait);
 
-	// Logging default setting
-	logging_config_default(&config);
+/* 
+ * Create RTP and RTCP socket pair, and possibly resolve their public
+ * address via STUN.
+ */
+pj_status_t stun_create_rtp_rtcp_sock(pjmedia_sock_info *skinfo, unsigned short local_port);
 
-	config.level = log_level;
-	config.console_level = console_log_level;
-
-	if (filename != NULL)
-	{
-		config.log_filename = pj_str((char *)filename);
-	}
-
-	return logging_reconfigure(&config);
-}
+#endif	// _NAT_HELPER_H_

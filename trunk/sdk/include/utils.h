@@ -25,56 +25,18 @@
 
 #include <map>
 
+#include "channel.h"
+#include "conference.h"
+
+/* Logging */
 enum VOXVE_LOG_LEVEL 
 {
 	VOXVE_LOG_ERR = 1,
-	VOXVE_LOG_WARN = 2,
-	VOXVE_LOG_INFO = 3,
-	VOXVE_LOG_DEBUG = 4,
-	VOXVE_LOG_TRACE = 5,
+	VOXVE_LOG_WARN,
+	VOXVE_LOG_INFO,
+	VOXVE_LOG_DEBUG,
+	VOXVE_LOG_TRACE
 };
-
-/* Channel */
-typedef struct voxve_channel
-{
-	int id;								/* unique id */
-
-	pjmedia_stream *stream;
-
-	pjmedia_transport *transport;
-
-	pjmedia_snd_port *snd_port;
-
-	pjmedia_port *null_snd;
-	pjmedia_master_port *master_port;
-
-	bool is_conferencing;	
-	int conf_slot;									/* slot if added into conf bridge */ 
-	int conf_id;									/* conference bridge id */
-
-} voxve_channel_t;
-
-/* Conference bridge */
-typedef struct voxve_conf
-{
-	int id;											/* unique id */
-
-	pjmedia_conf *p_conf;
-	
-	unsigned max_slots;
-	unsigned sampling_rate;
-	unsigned channel_count;
-	unsigned samples_per_frame;
-	unsigned bits_per_sample;
-
-	pjmedia_port *null_snd;
-	pjmedia_master_port *master_port;		/* Provide clock timing */
-
-	pjmedia_snd_port *snd_port;
-	int rec_dev_id;
-	int playback_dev_id;
-
-} voxve_conf_t;
 
 /**
  * Logging configuration, which can be (optionally) specified when calling
@@ -119,35 +81,36 @@ typedef struct voxve_logging_config
      * \endcode
      */
     void       (*cb)(int level, const char *data, pj_size_t len);
-
-
 } voxve_logging_config_t;
 
-/* Global Data */
+/* Global Data Struct */
 struct voxve_data
 {
-	pj_caching_pool cp;							/**< Global pool factory.		*/
-	pj_pool_t *pool;							/**< voxve's private pool.		*/
+	pj_caching_pool cp;							/* Global pool factory */
+	pj_pool_t *pool;							/* App private pool */
 
-	pjmedia_endpt *med_endpt;					/**< Media endpoint.		*/
+	pjmedia_endpt *med_endpt;					/* Media endpoint */
 
-	std::map<int, voxve_channel_t *> activechannels;	/** active channels **/
+	pj_timer_heap_t *timer_heap;
+
+	std::map<int, voxve_channel_t *> activechannels;	/* Active channels */
 	pj_rwmutex_t * activechannels_rwmutex;
 
-	pj_atomic_t *atomic_var;					/* Atomic Variables, available id */
+	pj_atomic_t *atomic_var;							/* Atomic variables, available id */
 
-	std::map<int, voxve_conf_t *> activeconfs;
+	std::map<int, voxve_conf_t *> activeconfs;			/* Active conference bridges */
 	pj_rwmutex_t * activeconfs_rwmutex;
 
-	/* Logging: */
-    voxve_logging_config log_cfg;				/**< Current logging config.	*/
-    pj_oshandle_t	 log_file;					/**< Output log file handle		*/
+	/* Logging */
+    voxve_logging_config log_cfg;				/* Current logging config */
+    pj_oshandle_t	 log_file;					/* Output log file handle */
 
-	/* Media parameters */
-	int sound_rec_id;							/* Capture device ID.		*/
-	int sound_play_id;							/* Playback device ID.		*/
+	/* Sound device */
+	int sound_rec_id;							/* Capture device ID */
+	int sound_play_id;							/* Playback device ID */
 
-	pj_bool_t	is_no_vad;						/* Disable VAD */
+	pj_bool_t	is_no_vad;						/* VAD */
+
     unsigned	ec_tail_len;					/* Echo canceller tail length, in miliseconds */
 
     /**
@@ -182,6 +145,12 @@ struct voxve_data
      * the value, the more computations are performed.
      */
     unsigned		max_media_ports;
+
+	pj_bool_t is_enable_stun;		/* STUN */
+	pj_stun_config stun_cfg;		/* STUN global setting */
+	pj_status_t	stun_status;		/* STUN server status */
+	char stun_server_addr[128];
+	pj_sockaddr	stun_srv;
 };
 
 
@@ -191,7 +160,7 @@ pj_status_t codecs_init(pjmedia_endpt *med_endpt);
 pj_status_t codecs_deinit(pjmedia_endpt *med_endpt);
 
 
-/** Stream **/
+/** Media Stream **/
 pj_status_t stream_create( pj_pool_t *pool,
 				  pjmedia_endpt *med_endpt,
 				  const pjmedia_codec_info *codec_info,
@@ -200,20 +169,7 @@ pj_status_t stream_create( pj_pool_t *pool,
 				  pjmedia_dir dir,
 				  pjmedia_transport *transport,
 				  const pj_sockaddr_in *rem_addr,
-				  pjmedia_stream **p_stream );
-
-
-/** Sound device **/
-void snd_close(pjmedia_snd_port *snd_port);
-
-
-/** Channel **/
-voxve_channel_t * channel_find(int channel_id);
-
-
-/**  Conference Bridge **/
-/* Use conference unique id to find instance */
-voxve_conf_t * conf_find(int conf_id);
+				  pjmedia_stream **p_stream);
 
 
 /** Logging **/
@@ -225,10 +181,8 @@ void logging(const char *sender, VOXVE_LOG_LEVEL log_level, const char *title, p
 
 
 /** Misc **/
-/* Register thread to pjlib */
-void register_thread();
+void register_thread();				/* Register external thread */
 
-/* Get available id */
-pj_atomic_value_t getavailableid(pj_atomic_t * atomic_var);
+pj_atomic_value_t getavailableid(pj_atomic_t * atomic_var);		/* Get available id */
 
 #endif // _UTILS_H_

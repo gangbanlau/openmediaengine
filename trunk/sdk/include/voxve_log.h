@@ -21,6 +21,6 @@
 #include "voxve.h"
 
 /* Logging configuration */
-OPENMEDIAENGINE_DLL_API voxve_status_t voxve_logging_reconfigure(int log_level, int console_log_level, char * log_filename);
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_logging_reconfigure(int log_level, int console_log_level, const char * log_filename);
 
 #endif // _VOXVE_LOG_H_
