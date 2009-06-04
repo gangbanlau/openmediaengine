@@ -15,24 +15,37 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
-#include "voxve_log.h"
 
-#include "utils.h"
+#ifndef _CONFERENCE_H_
+#define _CONFERENCE_H_
 
-voxve_status_t voxve_logging_reconfigure(int log_level, int console_log_level, const char * filename)
+#include <pjlib.h>
+#include <pjlib-util.h>
+#include <pjmedia.h>
+#include <pjmedia-codec.h>
+
+/* Conference bridge */
+typedef struct voxve_conf
 {
-	voxve_logging_config_t config;
+	int id;											/* unique id */
 
-	// Logging default setting
-	logging_config_default(&config);
+	pjmedia_conf *p_conf;
+	
+	unsigned max_slots;
+	unsigned sampling_rate;
+	unsigned channel_count;
+	unsigned samples_per_frame;
+	unsigned bits_per_sample;
 
-	config.level = log_level;
-	config.console_level = console_log_level;
+	pjmedia_port *null_snd;
+	pjmedia_master_port *master_port;				/* Provide clock timing */
 
-	if (filename != NULL)
-	{
-		config.log_filename = pj_str((char *)filename);
-	}
+	pjmedia_snd_port *snd_port;
+	int rec_dev_id;
+	int playback_dev_id;
 
-	return logging_reconfigure(&config);
-}
+} voxve_conf_t;
+
+voxve_conf_t * conf_find(int conf_id);
+
+#endif	// _CONFERENCE_H_

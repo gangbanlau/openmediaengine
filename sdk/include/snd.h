@@ -15,24 +15,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
-#include "voxve_log.h"
 
-#include "utils.h"
+#ifndef _SND_H_
+#define _SND_H_
 
-voxve_status_t voxve_logging_reconfigure(int log_level, int console_log_level, const char * filename)
-{
-	voxve_logging_config_t config;
+#include <pjlib.h>
+#include <pjlib-util.h>
+#include <pjmedia.h>
+#include <pjmedia-codec.h>
 
-	// Logging default setting
-	logging_config_default(&config);
+/* Close existing sound device */
+void snd_close(pjmedia_snd_port *snd_port);
 
-	config.level = log_level;
-	config.console_level = console_log_level;
-
-	if (filename != NULL)
-	{
-		config.log_filename = pj_str((char *)filename);
-	}
-
-	return logging_reconfigure(&config);
-}
+#endif // _SND_H_

@@ -75,6 +75,9 @@ int main(int argc, char ** argv)
 		return status;
 	}
 
+	/* STUN */
+	voxve_stun_enable("stun.ekiga.net");
+
 	if (stereo)
 	{
 		cout << "Stereo enabled" << endl;

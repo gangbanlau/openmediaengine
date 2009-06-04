@@ -15,6 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
+
 #ifndef _VOXVE_H_
 #define _VOXVE_H_
 
@@ -83,10 +84,17 @@ OPENMEDIAENGINE_DLL_API voxve_status_t voxve_authenticate(char *auth_string, int
 
 
 
+/** ############ Network setting ################# **/
+
+/** Enable STUN support **/
+OPENMEDIAENGINE_DLL_API int voxve_stun_enable(const char * stun_server_addr);
+
+
+
 /** ############ Microphone/Speaker functions #### **/
 
 /** Get count of sound devices **/ 
-OPENMEDIAENGINE_DLL_API int voxvx_snd_getcount();
+OPENMEDIAENGINE_DLL_API int voxve_snd_getcount();
 
 /** Get sound device info, it is caller's duty to free this pointer */
 OPENMEDIAENGINE_DLL_API voxve_snd_dev_info_t * voxve_snd_getinfo(int snd_dev_id);
