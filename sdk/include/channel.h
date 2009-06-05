@@ -44,6 +44,7 @@ typedef struct voxve_channel
 	int conf_slot;									/* slot id if added into conf bridge */ 
 	int conf_id;									/* conference bridge id */
 
+	pjmedia_sock_info skinfo;
 } voxve_channel_t;
 
 voxve_channel_t * channel_find(int channel_id);

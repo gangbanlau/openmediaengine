@@ -25,7 +25,7 @@
 
 extern struct voxve_data voxve_var;
 
-int voxve_snd_set(int waveindevice, int waveoutdevice)
+voxve_status_t voxve_snd_set(int waveindevice, int waveoutdevice)
 {
 	register_thread();
 
