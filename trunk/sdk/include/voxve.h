@@ -87,7 +87,10 @@ OPENMEDIAENGINE_DLL_API voxve_status_t voxve_authenticate(char *auth_string, int
 /** ############ Network setting ################# **/
 
 /** Enable STUN support **/
-OPENMEDIAENGINE_DLL_API int voxve_stun_enable(const char * stun_server_addr);
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_stun_enable(const char * stun_server_addr);
+
+/** Get resolved public address via STUN after channel created **/
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_stun_get_public_addr(int channel_id, char * addr_buf, unsigned buf_len, unsigned &port);
 
 
 
@@ -100,7 +103,7 @@ OPENMEDIAENGINE_DLL_API int voxve_snd_getcount();
 OPENMEDIAENGINE_DLL_API voxve_snd_dev_info_t * voxve_snd_getinfo(int snd_dev_id);
 
 /** Sets the sound device for channel capture and playback. If device is set to ¨C1 the default device is used. **/
-OPENMEDIAENGINE_DLL_API int voxve_snd_set(int waveindevice, int waveoutdevice);
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_snd_set(int waveindevice, int waveoutdevice);
 
 /** Sets the speaker volume level. **/
 //voxve_status_t voxve_snd_setspeakervolume(int level);
@@ -146,7 +149,7 @@ OPENMEDIAENGINE_DLL_API void voxve_disable_stereo();
 /** Create new channel, return channel id or ¨C1 if an error occurred **/
 OPENMEDIAENGINE_DLL_API int voxve_channel_create(unsigned short local_port);
 
-OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_delete(int channel);
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_delete(int channel_id);
 
 /** Start streaming **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_startstream(int channel_id, voxve_codec_id_t codec, unsigned int ptime, char * remote_ip, unsigned short remote_port, voxve_stream_dir dir);
@@ -155,10 +158,10 @@ OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_startstream2(int channel_id
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_stopstream(int channel_id);
 
 /** Modify current channel **/
-OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_update(int channel, voxve_codec_id_t codec, unsigned int ptime, unsigned short local_port, char * remote_ip, unsigned short remote_port, voxve_stream_dir dir);
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_update(int channel_id, voxve_codec_id_t codec, unsigned int ptime, unsigned short local_port, char * remote_ip, unsigned short remote_port, voxve_stream_dir dir);
 
 /** Connected to the soundcard for that specific channel **/
-OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_startplayout(int channel);
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_startplayout(int channel_id);
 
 /** Stops sending data from the specified channel to the soundcard. However, packets are still received as long as the **/
 /** VoiceEnigne is listening to the port! **/

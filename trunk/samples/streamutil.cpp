@@ -117,7 +117,16 @@ int main(int argc, char ** argv)
 
 	if (channel_id == -1)
 		cout << "Create channel error" << endl;
-	else {		
+	else {	
+		/* Get resolved public addr via STUN */
+		char addr_buf[128];
+		unsigned port;
+		status = voxve_stun_get_public_addr(channel_id, addr_buf, sizeof(addr_buf) - 1, port);
+		if (status == 0)
+			cout << "Resolved public addr " << addr_buf << ":" << port << endl;
+		else
+			goto on_error;
+
 		status = voxve_channel_startstream(channel_id, codec, 20, remote_ip, remote_port, STREAM_DIR_ENCODING_DECODING);
 		if (status != 0)	goto on_error;
 		

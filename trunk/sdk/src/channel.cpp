@@ -60,8 +60,8 @@ int channel_internalcreate(voxve_channel_t * channel, unsigned short local_port)
 			return -1;
 		}
 
-		pjmedia_sock_info skinfo;
-		status = stun_create_rtp_rtcp_sock(&skinfo, local_port);
+		pjmedia_sock_info *skinfo = &(channel->skinfo);
+		status = stun_create_rtp_rtcp_sock(skinfo, local_port);
 
 		if (status != PJ_SUCCESS) 
 		{
@@ -69,7 +69,7 @@ int channel_internalcreate(voxve_channel_t * channel, unsigned short local_port)
 			return -1;
 		}
 
-		status = pjmedia_transport_udp_attach(voxve_var.med_endpt, NULL, &skinfo, 0, &transport);
+		status = pjmedia_transport_udp_attach(voxve_var.med_endpt, NULL, skinfo, 0, &transport);
 		if (status != PJ_SUCCESS) 
 		{
 			logging(THIS_FILE, VOXVE_LOG_WARN, "Unable to create media transport", status);
