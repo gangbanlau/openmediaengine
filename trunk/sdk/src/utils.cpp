@@ -18,6 +18,8 @@
 
 #include "utils.h"
 
+#include "global.h"
+
 #include <list>
 
 #define THIS_FILE	"utils.cpp"
@@ -163,135 +165,17 @@ pj_status_t stream_create( pj_pool_t *pool,
     return PJ_SUCCESS;
 }
 
-/* Set default logging cfg */
-void logging_config_default(voxve_logging_config *cfg)
-{
-    pj_bzero(cfg, sizeof(*cfg));
-
-    cfg->level = 3;
-    cfg->console_level = 3;
-    cfg->decor = PJ_LOG_HAS_SENDER | PJ_LOG_HAS_TIME | PJ_LOG_HAS_MICRO_SEC | PJ_LOG_HAS_NEWLINE;
-}
-
-static void logging_config_dup(pj_pool_t *pool, voxve_logging_config *dst, const voxve_logging_config *src)
-{
-    pj_memcpy(dst, src, sizeof(*src));
-    pj_strdup_with_null(voxve_var.pool, &dst->log_filename, &src->log_filename);
-}
-
-/* Log callback */
-static void log_writer(int level, const char *buffer, int len)
-{
-    /* Write to file, stdout or application callback. */
-
-    if (voxve_var.log_file) 
-	{
-		pj_ssize_t size = len;
-		pj_file_write(voxve_var.log_file, buffer, &size);
-		/* This will slow things down considerably! Don't do it!
-		pj_file_flush(pjsua_var.log_file);
-		*/
-    }
-
-    if (level <= (int)voxve_var.log_cfg.console_level) 
-	{
-		if (voxve_var.log_cfg.cb)
-			(*voxve_var.log_cfg.cb)(level, buffer, len);
-		else
-			pj_log_write(level, buffer, len);
-    }
-}
-
-void logging(const char *sender, VOXVE_LOG_LEVEL log_level, const char *title, pj_status_t status)
-{
-    char msg[PJ_ERR_MSG_SIZE];
-
-    pj_strerror(status, msg, sizeof(msg));
-
-	switch(log_level)
-	{
-#if PJ_LOG_MAX_LEVEL >= 1
-	case VOXVE_LOG_ERR:
-		PJ_LOG(1,(sender, "%s: %s [status=%d]", title, msg, status));
-		break;
-#endif
-#if PJ_LOG_MAX_LEVEL >= 2
-	case VOXVE_LOG_WARN:
-		PJ_LOG(2,(sender, "%s: %s [status=%d]", title, msg, status));
-		break;
-#endif
-#if PJ_LOG_MAX_LEVEL >= 3
-	case VOXVE_LOG_INFO:
-		PJ_LOG(3,(sender, "%s: %s [status=%d]", title, msg, status));
-		break;
-#endif
-#if PJ_LOG_MAX_LEVEL >= 4
-	case VOXVE_LOG_DEBUG:
-		PJ_LOG(4,(sender, "%s: %s [status=%d]", title, msg, status));
-		break;
-#endif
-#if PJ_LOG_MAX_LEVEL >= 5
-	case VOXVE_LOG_TRACE:
-		PJ_LOG(5,(sender, "%s: %s [status=%d]", title, msg, status));
-		break;
-	default:
-		PJ_LOG(5,(sender, "%s: %s [status=%d]", title, msg, status));
-#endif
-	}
-}
-
-/*
- * Application can call this function at any time to change logging settings.
- */
-pj_status_t logging_reconfigure(const voxve_logging_config_t *cfg)
-{
-    pj_status_t status;
-
-    /* Save config. */
-    logging_config_dup(voxve_var.pool, &voxve_var.log_cfg, cfg);
-
-    /* Redirect log function to ours */
-    pj_log_set_log_func(&log_writer);
-
-    /* Set decor */
-    pj_log_set_decor(voxve_var.log_cfg.decor);
-
-    /* Close existing file, if any */
-    if (voxve_var.log_file) 
-	{
-		pj_file_close(voxve_var.log_file);
-		voxve_var.log_file = NULL;
-    }
-
-    /* If output log file is desired, create the file: */
-    if (voxve_var.log_cfg.log_filename.slen) 
-	{
-		status = pj_file_open(voxve_var.pool, 
-			      voxve_var.log_cfg.log_filename.ptr,
-			      PJ_O_WRONLY, 
-			      &voxve_var.log_file);
-
-		if (status != PJ_SUCCESS) 
-		{
-			logging(THIS_FILE, VOXVE_LOG_WARN, "Create log file", status);
-			return status;
-		}
-    }
-
-    return PJ_SUCCESS;
-}
-
-typedef struct voxve_external_thread
+typedef struct
 {
 	pj_thread_t *thread;
 	pj_thread_desc desc;
-} voxve_external_thread;
+} external_thread_t;
 
-static std::list<voxve_external_thread *> registered_threads;
+static std::list<external_thread_t *> registered_threads;
 
 void register_thread()
 {
-	voxve_external_thread * e_thread = new voxve_external_thread;
+	external_thread_t * e_thread = new external_thread_t;
 
 	if(!pj_thread_is_registered()) 
 	{

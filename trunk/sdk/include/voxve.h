@@ -16,24 +16,28 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
 
-#ifndef _VOXVE_H_
-#define _VOXVE_H_
+#ifndef VOXVE_H_
+#define VOXVE_H_
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
+#ifdef _WIN32
 #ifdef OPENMEDIAENGINE_EXPORTS
 	#define OPENMEDIAENGINE_DLL_API __declspec(dllexport)
 #else
 	#define OPENMEDIAENGINE_DLL_API __declspec(dllimport)
 #endif
+#else
+	#define OPENMEDIAENGINE_DLL_API
+#endif
 
 /** Status code **/
 typedef int voxve_status_t;
 
-#define VOXVE_SUCCESS 0
+#define VOXVE_SUCCESS 	0
 
 /* Stream Direction */
 typedef enum voxve_stream_dir 
@@ -55,7 +59,7 @@ typedef enum voxve_codec_id
 } voxve_codec_id_t;
 
 /** Sound device information **/
-typedef struct voxve_snd_dev_info
+typedef struct
 {
     char	name[64];					/* Device name.		    */
     unsigned	input_count;	        /* Max number of input channels.  */
@@ -74,7 +78,7 @@ enum voxve_port_op
 
 /** ############# Initialization ################### **/
 
-/** Init Voice Engine **/
+/** Init Media Engine **/
 /** You need provide the expiry information here if you get a time limited copy **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_init(int month = 0, int day = 0, int year = 0);
 
@@ -84,7 +88,7 @@ OPENMEDIAENGINE_DLL_API voxve_status_t voxve_authenticate(char *auth_string, int
 
 
 
-/** ############ Network setting ################# **/
+/** ############ NAT/TUNNEL/P2P Helpers ################# **/
 
 /** Enable STUN support **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_stun_enable(const char * stun_server_addr);
@@ -102,27 +106,27 @@ OPENMEDIAENGINE_DLL_API int voxve_snd_getcount();
 /** Get sound device info, it is caller's duty to free this pointer */
 OPENMEDIAENGINE_DLL_API voxve_snd_dev_info_t * voxve_snd_getinfo(int snd_dev_id);
 
-/** Sets the sound device for channel capture and playback. If device is set to 每1 the default device is used. **/
+/** Sets the sound device for channel capture and playback. If device is set to -1 the default device is used. **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_snd_set(int waveindevice, int waveoutdevice);
 
 /** Sets the speaker volume level. **/
 //voxve_status_t voxve_snd_setspeakervolume(int level);
 
-/** Returns the current speaker volume or 每1 if an error occurred. **/
+/** Returns the current speaker volume or -1 if an error occurred. **/
 //int voxve_snd_getspeakervolume();
 
 /** Sets the microphone volume level. **/
 //voxve_status_t voxve_snd_setmicvolume(int level);
 
-/** Returns the current microphone volume or 每1 if an error occurred. **/
+/** Returns the current microphone volume or -1 if an error occurred. **/
 //int voxve_snd_getmicvolume();
 
 /** Set AEC setting before opening sound port, value zero will disable echo canceller. **/
-/** By default, echo canceller is enabled. 200 ms **/
+/** By default, echo canceller is enabled at 200 ms **/
 OPENMEDIAENGINE_DLL_API void voxve_snd_set_ec(unsigned ec_tail_ms);
 
 /** Set clock rate before opening sound device **/
-/** Default valus is 8000hz **/
+/** Default values is 8000hz **/
 /** Different clock rate between conference bridge, sound device and audio codec will cause resampling internal **/
 OPENMEDIAENGINE_DLL_API void voxve_snd_set_clockrate(unsigned snd_clock_rate);
 
@@ -146,25 +150,27 @@ OPENMEDIAENGINE_DLL_API void voxve_disable_stereo();
 
 /** ############ Channel functions ################ **/
 
-/** Create new channel, return channel id or 每1 if an error occurred **/
+/** Create new channel, return channel id or -1 if an error occurred **/
 OPENMEDIAENGINE_DLL_API int voxve_channel_create(unsigned short local_port);
 
+/** Release a channel **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_delete(int channel_id);
 
 /** Start streaming **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_startstream(int channel_id, voxve_codec_id_t codec, unsigned int ptime, char * remote_ip, unsigned short remote_port, voxve_stream_dir dir);
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_startstream2(int channel_id, voxve_codec_id_t codec, unsigned int ptime, unsigned int rtp_ssrc, char * remote_ip, unsigned short remote_port, voxve_stream_dir dir);
 
+/** Stop streaming **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_stopstream(int channel_id);
 
 /** Modify current channel **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_update(int channel_id, voxve_codec_id_t codec, unsigned int ptime, unsigned short local_port, char * remote_ip, unsigned short remote_port, voxve_stream_dir dir);
 
-/** Connected to the soundcard for that specific channel **/
+/** Connected to the sound device for that specific channel **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_startplayout(int channel_id);
 
-/** Stops sending data from the specified channel to the soundcard. However, packets are still received as long as the **/
-/** VoiceEnigne is listening to the port! **/
+/** Stops sending data from the specified channel to the sound device. However, packets are still received as long as the **/
+/** Media Enigne is listening to the port! **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_stopplayout(int channel);
 
 /** When enable is TRUE this call will stop playout and transmission on a temporary basis. It will not shut down the sockets **/
@@ -187,13 +193,14 @@ OPENMEDIAENGINE_DLL_API voxve_status_t voxve_dtmf_dial(int channel, char *ascii_
 /** ############# Conference functions ############ **/
 
 /** Set clock rate before opening conference bridge **/
-/** Default valus is 8000hz **/
+/** Default values is 8000hz **/
 /** Different clock rate between conference bridge, sound device and audio codec will cause resampling internal **/
 OPENMEDIAENGINE_DLL_API void voxve_conf_set_clockrate(unsigned conf_clock_rate);
 
-/** Create conference bridge, return bridge id or 每1 if an error occurred **/
+/** Create conference bridge, return bridge id or -1 if an error occurred **/
 OPENMEDIAENGINE_DLL_API int voxve_conf_create();
 
+/** Release a bridge **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_conf_destroy(int conf_id);
 
 /** Make sure this channel not playing out, return channel slot or -1 if an error occurred **/
@@ -244,7 +251,7 @@ OPENMEDIAENGINE_DLL_API voxve_status_t voxve_conf_configureport(int conf_id, uns
 
 /** ############ Termination functions ############ **/
 
-/** Shutdown Voice Engine **/
+/** Shutdown Media Engine **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_shutdown();
 
 

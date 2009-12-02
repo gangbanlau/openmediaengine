@@ -19,13 +19,10 @@
 #ifndef _CONFERENCE_H_
 #define _CONFERENCE_H_
 
-#include <pjlib.h>
-#include <pjlib-util.h>
-#include <pjmedia.h>
-#include <pjmedia-codec.h>
+#include "pj_inc.h"
 
 /* Conference bridge */
-typedef struct voxve_conf
+typedef struct
 {
 	int id;											/* unique id */
 
@@ -44,8 +41,8 @@ typedef struct voxve_conf
 	int rec_dev_id;
 	int playback_dev_id;
 
-} voxve_conf_t;
+} conf_t;
 
-voxve_conf_t * conf_find(int conf_id);
+conf_t * conf_find(int conf_id);
 
 #endif	// _CONFERENCE_H_

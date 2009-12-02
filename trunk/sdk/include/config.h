@@ -35,7 +35,7 @@
 #define SND_DEFAULT_PLAY_LATENCY	100
 
 /* TODO Windows Vista Issue */
-/* if SND_DEFAULT_REC_LATENCY 40 and SND_DEFAULT_PLAY_LATENCY 40, then voice playback choppy */
-/* if DEFAULT_CLOCK_RATE 8000 and SND_DEFAULT_CLOCK_RATE 44000, then voice playback no sound */
+/* if SND_DEFAULT_REC_LATENCY 40 and SND_DEFAULT_PLAY_LATENCY 40, then sound playback choppy */
+/* if DEFAULT_CLOCK_RATE 8000 and SND_DEFAULT_CLOCK_RATE 44000, then sound playback no voice */
 
 #endif	// _CONFIG_H_

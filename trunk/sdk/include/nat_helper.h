@@ -18,10 +18,7 @@
 #ifndef _NAT_HELPER_H_
 #define _NAT_HELPER_H_
 
-#include <pjlib.h>
-#include <pjlib-util.h>
-#include <pjmedia.h>
-#include <pjmedia-codec.h>
+#include "pj_inc.h"
 
 /*
  * Resolve STUN server.
