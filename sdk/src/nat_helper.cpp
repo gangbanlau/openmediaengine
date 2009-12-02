@@ -15,10 +15,11 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
-
-#include "voxve.h"
 #include "nat_helper.h"
 
+#include "voxve.h"
+
+#include "global.h"
 #include "utils.h"
 #include "channel.h"
 
@@ -69,7 +70,8 @@ pj_status_t stun_resolve_server(pj_bool_t wait)
 					return voxve_var.stun_status;
 				}
 			} 
-			else {
+			else
+			{
 				str_host = stun_host;
 				port = 3478;
 			}
@@ -88,7 +90,8 @@ pj_status_t stun_resolve_server(pj_bool_t wait)
 					voxve_var.stun_srv.ipv4.sin_addr = *(pj_in_addr*)he.h_addr;
 					voxve_var.stun_srv.ipv4.sin_port = pj_htons((pj_uint16_t)port);
 				}
-				else {
+				else
+				{
 					logging(THIS_FILE, VOXVE_LOG_WARN, "Invalid STUN server", voxve_var.stun_status);
 					return voxve_var.stun_status;
 				}
@@ -101,7 +104,8 @@ pj_status_t stun_resolve_server(pj_bool_t wait)
 				(int)pj_ntohs(voxve_var.stun_srv.ipv4.sin_port)));
 		}
 		/* Otherwise disable STUN. */
-		else {
+		else
+		{
 			voxve_var.stun_status = PJ_SUCCESS;
 		}
 
@@ -120,7 +124,8 @@ pj_status_t stun_resolve_server(pj_bool_t wait)
 
 		return voxve_var.stun_status;
 	}
-	else {
+	else
+	{
 		/* STUN server has been resolved, return the status */
 		return voxve_var.stun_status;
 	}
@@ -248,7 +253,7 @@ voxve_status_t voxve_stun_get_public_addr(int channel_id, char * addr_buf, unsig
 {
 	PJ_ASSERT_RETURN(voxve_var.is_enable_stun, PJ_FALSE);
 
-	voxve_channel_t * channel = channel_find(channel_id);
+	channel_t * channel = channel_find(channel_id);
 	if (channel != NULL)
 	{
 		pj_sockaddr_print(&channel->skinfo.rtp_addr_name, addr_buf, buf_len, 0);

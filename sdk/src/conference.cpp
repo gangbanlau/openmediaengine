@@ -16,9 +16,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
 
-#include "voxve.h"
 #include "conference.h"
 
+#include "voxve.h"
+
+#include "global.h"
 #include "config.h"
 #include "utils.h"
 #include "snd.h"
@@ -27,11 +29,11 @@
 
 extern struct voxve_data voxve_var;
 
-voxve_conf_t * conf_find(int conf_id)
+conf_t * conf_find(int conf_id)
 {
-	voxve_conf_t * conf = NULL;
+	conf_t * conf = NULL;
 	pj_rwmutex_lock_read(voxve_var.activeconfs_rwmutex);
-	std::map<int, voxve_conf_t*>::iterator iter2 = voxve_var.activeconfs.find(conf_id);
+	std::map<int, conf_t*>::iterator iter2 = voxve_var.activeconfs.find(conf_id);
 
 	if (iter2 != voxve_var.activeconfs.end())
 	{
@@ -85,7 +87,7 @@ int voxve_conf_create()
 		return -1;
 	}
 
-	voxve_conf_t * conf = new voxve_conf_t;
+	conf_t * conf = new conf_t;
 
 	conf->bits_per_sample = NBITS;
 	conf->channel_count = voxve_var.channel_count;
@@ -109,11 +111,11 @@ voxve_status_t voxve_conf_destroy(int conf_id)
 {
 	register_thread();
 
-	voxve_conf_t * conf = NULL;
+	conf_t * conf = NULL;
 //	pj_status_t status;
 
 	pj_rwmutex_lock_write(voxve_var.activeconfs_rwmutex);
-	std::map<int, voxve_conf_t*>::iterator iter = voxve_var.activeconfs.find(conf_id);
+	std::map<int, conf_t*>::iterator iter = voxve_var.activeconfs.find(conf_id);
 	if (iter != voxve_var.activeconfs.end())
 	{
 		conf = (*iter).second;
@@ -160,7 +162,7 @@ int voxve_conf_addchannel(int conf_id, int channel_id)
 {
 	register_thread();
 
-	voxve_channel_t * channel = channel_find(channel_id);
+	channel_t * channel = channel_find(channel_id);
 
 	if (channel == NULL)
 	{
@@ -168,7 +170,7 @@ int voxve_conf_addchannel(int conf_id, int channel_id)
 		return -1;
 	}
 
-	voxve_conf_t * conf = conf_find(conf_id);
+	conf_t * conf = conf_find(conf_id);
 
 	if (conf == NULL)
 	{
@@ -208,7 +210,7 @@ voxve_status_t voxve_conf_removechannel(int conf_id, int channel_id)
 {
 	register_thread();
 
-	voxve_conf_t * conf = conf_find(conf_id);
+	conf_t * conf = conf_find(conf_id);
 
 	if (conf == NULL)
 	{
@@ -216,7 +218,7 @@ voxve_status_t voxve_conf_removechannel(int conf_id, int channel_id)
 		return -1;
 	}
 
-	voxve_channel_t * channel = channel_find(channel_id);
+	channel_t * channel = channel_find(channel_id);
 
 	if (channel == NULL)
 	{
@@ -238,7 +240,7 @@ voxve_status_t voxve_conf_connect(int conf_id, unsigned source_slot, unsigned ds
 {
 	register_thread();
 
-	voxve_conf_t * conf = conf_find(conf_id);
+	conf_t * conf = conf_find(conf_id);
 
 	if (conf == NULL)
 	{
@@ -253,7 +255,7 @@ voxve_status_t voxve_conf_disconnect(int conf_id, unsigned source_slot, unsigned
 {
 	register_thread();
 
-	voxve_conf_t * conf = conf_find(conf_id);
+	conf_t * conf = conf_find(conf_id);
 
 	if (conf == NULL)
 	{
@@ -271,7 +273,7 @@ voxve_status_t voxve_conf_setsnddev(int conf_id, int cap_dev, int playback_dev)
 
 	pj_status_t status; 
 
-	voxve_conf_t * conf = conf_find(conf_id);
+	conf_t * conf = conf_find(conf_id);
 
 	if (conf == NULL)
 	{
@@ -289,7 +291,8 @@ voxve_status_t voxve_conf_setsnddev(int conf_id, int cap_dev, int playback_dev)
 		snd_close(conf->snd_port);
 		conf->snd_port = NULL;
 	} 
-	else {
+	else
+	{
 		/* snd not add to bridge */
 		if (conf->master_port != NULL)
 		{
@@ -331,7 +334,7 @@ voxve_status_t voxve_conf_setnosnddev(int conf_id)
 
 	pj_status_t status; 
 
-	voxve_conf_t * conf = conf_find(conf_id);
+	conf_t * conf = conf_find(conf_id);
 
 	if (conf == NULL)
 	{
@@ -385,7 +388,7 @@ int voxve_conf_getportcount(int conf_id)
 {
 	register_thread();
 
-	voxve_conf_t * conf = conf_find(conf_id);
+	conf_t * conf = conf_find(conf_id);
 
 	if (conf != NULL)
 	{
@@ -399,7 +402,7 @@ int voxve_conf_getconnectcount(int conf_id)
 {
 	register_thread();
 
-	voxve_conf_t * conf = conf_find(conf_id);
+	conf_t * conf = conf_find(conf_id);
 
 	if (conf != NULL)
 	{
@@ -414,7 +417,7 @@ voxve_status_t voxve_conf_getsignallevel(int conf_id, unsigned slot, unsigned *t
 {
 	register_thread();
 
-	voxve_conf_t * conf = conf_find(conf_id);
+	conf_t * conf = conf_find(conf_id);
 
 	if (conf != NULL)
 	{
@@ -428,7 +431,7 @@ voxve_status_t voxve_conf_adjustrxlevel(int conf_id, unsigned slot, int adj_leve
 {
 	register_thread();
 
-	voxve_conf_t * conf = conf_find(conf_id);
+	conf_t * conf = conf_find(conf_id);
 
 	if (conf != NULL)
 	{
@@ -442,7 +445,7 @@ voxve_status_t voxve_conf_adjusttxlevel(int conf_id, unsigned slot, int adj_leve
 {
 	register_thread();
 
-	voxve_conf_t * conf = conf_find(conf_id);
+	conf_t * conf = conf_find(conf_id);
 
 	if (conf != NULL)
 	{
@@ -495,7 +498,7 @@ voxve_status_t voxve_conf_configureport(int conf_id, unsigned slot, voxve_port_o
 		r_op = PJMEDIA_PORT_NO_CHANGE;
 	}
 
-	voxve_conf_t * conf = conf_find(conf_id);
+	conf_t * conf = conf_find(conf_id);
 
 	if (conf != NULL)
 	{

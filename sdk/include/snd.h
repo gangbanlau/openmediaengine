@@ -19,10 +19,7 @@
 #ifndef _SND_H_
 #define _SND_H_
 
-#include <pjlib.h>
-#include <pjlib-util.h>
-#include <pjmedia.h>
-#include <pjmedia-codec.h>
+#include "pj_inc.h"
 
 /* Close existing sound device */
 void snd_close(pjmedia_snd_port *snd_port);

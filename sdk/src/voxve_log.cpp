@@ -17,13 +17,15 @@
  */
 #include "voxve_log.h"
 
-#include "utils.h"
+#include "logging.h"
+
+#define THIS_FILE "voxve_log.cpp"
 
 voxve_status_t voxve_logging_reconfigure(int log_level, int console_log_level, const char * filename)
 {
-	voxve_logging_config_t config;
+	logging_config_t config;
 
-	// Logging default setting
+	// init Logging default setting
 	logging_config_default(&config);
 
 	config.level = log_level;

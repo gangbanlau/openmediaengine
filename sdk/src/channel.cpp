@@ -15,9 +15,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
+#include "channel.h"
 
 #include "voxve.h"
-#include "channel.h"
+#include "voxve_log.h"
+#include "logging.h"
+#include "global.h"
 
 #include "config.h"
 #include "utils.h"
@@ -28,12 +31,12 @@
 
 extern struct voxve_data voxve_var;
 
-voxve_channel_t * channel_find(int channel_id)
+channel_t * channel_find(int channel_id)
 {
-	voxve_channel_t * channel = NULL;
+	channel_t * channel = NULL;
 
 	pj_rwmutex_lock_read(voxve_var.activechannels_rwmutex);
-	std::map<int, voxve_channel_t*>::iterator iter = voxve_var.activechannels.find(channel_id);
+	std::map<int, channel_t*>::iterator iter = voxve_var.activechannels.find(channel_id);
 
 	if (iter != voxve_var.activechannels.end())
 	{
@@ -44,7 +47,7 @@ voxve_channel_t * channel_find(int channel_id)
 	return channel;
 }
 
-int channel_internalcreate(voxve_channel_t * channel, unsigned short local_port)
+int channel_internalcreate(channel_t * channel, unsigned short local_port)
 {
 	/* Create media transport */
 	pjmedia_transport *transport = NULL;
@@ -102,7 +105,7 @@ int channel_internalcreate(voxve_channel_t * channel, unsigned short local_port)
 	return 0;
 }
 
-voxve_status_t channel_connectnullsnd(voxve_channel_t * channel)
+voxve_status_t channel_connectnullsnd(channel_t * channel)
 {
 	/* Get the port interface of the stream */
 	pjmedia_port *stream_port = NULL;
@@ -132,7 +135,7 @@ voxve_status_t channel_connectnullsnd(voxve_channel_t * channel)
 	return pjmedia_master_port_start(master_port);
 }
 
-voxve_status_t channel_disconnectnullsnd(voxve_channel_t * channel)
+voxve_status_t channel_disconnectnullsnd(channel_t * channel)
 {
 	/* Destroy master port and null port */
 	if (channel->master_port != NULL)
@@ -156,7 +159,7 @@ int voxve_channel_create(unsigned short local_port)
 
 	int channel_id = getavailableid(voxve_var.atomic_var);
 
-	voxve_channel_t * channel = new voxve_channel_t;
+	channel_t * channel = new channel_t;
 	channel->id = channel_id;
 
 	int rtCode = channel_internalcreate(channel, local_port);
@@ -243,7 +246,7 @@ voxve_status_t voxve_channel_startstream2(int channel_id, voxve_codec_id_t codec
 		    return -1;
 	}
 
-	voxve_channel_t * channel = channel_find(channel_id);
+	channel_t * channel = channel_find(channel_id);
 
 	if (channel == NULL)
 	{
@@ -257,7 +260,8 @@ voxve_status_t voxve_channel_startstream2(int channel_id, voxve_codec_id_t codec
 
 	if (status != PJ_SUCCESS)
 		return -1;
-	else {
+	else
+	{
 		/* Start streaming */
 		status = pjmedia_stream_start(stream);
 
@@ -279,7 +283,7 @@ voxve_status_t voxve_channel_stopstream(int channel_id)
 {
 	register_thread();
 
-	voxve_channel_t *channel = channel_find(channel_id);
+	channel_t *channel = channel_find(channel_id);
 
 	if (channel == NULL)
 		return -1;
@@ -304,10 +308,10 @@ voxve_status_t voxve_channel_delete(int channelid)
 
 	pj_status_t status;
 	bool hasError = false;
-	voxve_channel_t * channel = NULL;
+	channel_t * channel = NULL;
 
 	pj_rwmutex_lock_write(voxve_var.activechannels_rwmutex);
-	std::map<int, voxve_channel_t*>::iterator iter = voxve_var.activechannels.find(channelid);
+	std::map<int, channel_t*>::iterator iter = voxve_var.activechannels.find(channelid);
 	if (iter != voxve_var.activechannels.end())
 	{
 		channel = (*iter).second;
@@ -328,7 +332,8 @@ voxve_status_t voxve_channel_delete(int channelid)
 		channel_disconnectnullsnd(channel);
 
 		/* Destroy stream */
-		if (channel->stream) {
+		if (channel->stream)
+		{
 			pjmedia_stream_destroy(channel->stream);
 			channel->stream = NULL;
 		}
@@ -363,7 +368,7 @@ voxve_status_t voxve_channel_startplayout(int channelid)
 {
 	register_thread();
 
-	voxve_channel_t * channel = channel_find(channelid);
+	channel_t * channel = channel_find(channelid);
 	pj_status_t status; 
 
 	if (channel != NULL)
@@ -410,7 +415,7 @@ voxve_status_t voxve_channel_stopplayout(int channelid)
 {
 	register_thread();
 
-	voxve_channel_t * channel = channel_find(channelid);
+	channel_t * channel = channel_find(channelid);
 
 	if (channel != NULL)
 	{
@@ -440,7 +445,8 @@ voxve_status_t voxve_channel_putonhold(int channelid, bool enable)
 
 		return 0;
 	}
-	else {
+	else
+	{
 		/* Unhold */
 		status = voxve_channel_startplayout(channelid);
 		PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
@@ -453,7 +459,7 @@ voxve_status_t voxve_channel_update(int channel_id, voxve_codec_id_t codec, unsi
 {
 	register_thread();
 
-	voxve_channel_t * channel = channel_find(channel_id);
+	channel_t * channel = channel_find(channel_id);
 	pj_status_t status;
 	bool connected_snd = false;
 
@@ -472,7 +478,8 @@ voxve_status_t voxve_channel_update(int channel_id, voxve_codec_id_t codec, unsi
 	channel_disconnectnullsnd(channel);
 
 	/* Destroy stream */
-	if (channel->stream) {
+	if (channel->stream)
+	{
 		pjmedia_stream_destroy(channel->stream);
 		channel->stream = NULL;
 	}

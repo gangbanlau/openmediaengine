@@ -18,8 +18,7 @@
 #ifndef _TIMER_H_
 #define _TIMER_H_
 
-#include <pjlib.h>
-#include <pjlib-util.h>
+#include "pj_inc.h"
 
 pj_status_t timer_heap_init();
 

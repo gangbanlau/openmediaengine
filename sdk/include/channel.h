@@ -19,15 +19,12 @@
 #ifndef _CHANNEL_H_
 #define _CHANNEL_H_
 
-#include <pjlib.h>
-#include <pjlib-util.h>
-#include <pjmedia.h>
-#include <pjmedia-codec.h>
+#include "pj_inc.h"
 
 #include "voxve.h"
 
 /* Channel */
-typedef struct voxve_channel
+typedef struct
 {
 	int id;											/* unique id */
 
@@ -45,14 +42,14 @@ typedef struct voxve_channel
 	int conf_id;									/* conference bridge id */
 
 	pjmedia_sock_info skinfo;
-} voxve_channel_t;
+} channel_t;
 
-voxve_channel_t * channel_find(int channel_id);
+channel_t * channel_find(int channel_id);
 
-int channel_internalcreate(voxve_channel_t * channel, unsigned short local_port);
+int channel_internalcreate(channel_t * channel, unsigned short local_port);
 
-voxve_status_t channel_connectnullsnd(voxve_channel_t * channel);
+voxve_status_t channel_connectnullsnd(channel_t * channel);
 
-voxve_status_t channel_disconnectnullsnd(voxve_channel_t * channel);
+voxve_status_t channel_disconnectnullsnd(channel_t * channel);
 
 #endif	// _CHANNEL_H_

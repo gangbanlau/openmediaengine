@@ -15,10 +15,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
-#include <pjlib.h>
-#include <pjlib-util.h>
-
 #include "timer.h"
+
+#include "global.h"
 #include "utils.h"
 
 #define THIS_FILE "timer.cpp"
@@ -49,7 +48,8 @@ int timer_heap_handle_events(unsigned msec_timeout)
 		{
 			pj_thread_sleep(PJ_TIME_VAL_MSEC(tv));
 		}
-		else {
+		else
+		{
 			 pj_thread_sleep(PJ_TIME_VAL_MSEC(next_delay));
 			 c = pj_timer_heap_poll(voxve_var.timer_heap, &next_delay);
 			 if (c > 0)

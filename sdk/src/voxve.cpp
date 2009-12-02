@@ -15,16 +15,13 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
+#include "voxve.h"
 
-#include <pjlib.h>
-#include <pjlib-util.h>
-#include <pjmedia.h>
-#include <pjmedia-codec.h>
+#include "pj_inc.h"
 
 #include <map>
 
-#include "voxve.h"
-
+#include "global.h"
 #include "config.h"
 #include "utils.h"
 #include "timer.h"
@@ -131,8 +128,8 @@ voxve_status_t voxve_init(int month, int day, int year)
     /* Create memory pool for application purpose */
 	voxve_var.pool = pj_pool_create( &voxve_var.cp.factory,	    /* pool factory	    */
 			   "openmediaengine",								/* pool name.	    */
-			   4000,											/* init size	    */
-			   4000,											/* increment size	    */
+			   1000,											/* init size	    */
+			   1000,											/* increment size	    */
 			   NULL												/* callback on error    */
 			   );
 
@@ -178,10 +175,10 @@ voxve_status_t voxve_shutdown()
 
 	/* Destroy stream */
 	pj_rwmutex_lock_write(voxve_var.activechannels_rwmutex);
-	std::map<int, voxve_channel_t*>::iterator iterator = voxve_var.activechannels.begin();
+	std::map<int, channel_t*>::iterator iterator = voxve_var.activechannels.begin();
 	while (iterator != voxve_var.activechannels.end()) 
 	{
-		voxve_channel_t * channel = (*iterator).second;
+		channel_t * channel = (*iterator).second;
 
 		/* Destroy sound device */
 		if (channel->snd_port != NULL) 
@@ -190,7 +187,8 @@ voxve_status_t voxve_shutdown()
 			channel->snd_port = NULL;
 		}
 
-		if (channel->stream) {
+		if (channel->stream)
+		{
 			pjmedia_transport *tp;
 
 			tp = pjmedia_stream_get_transport(channel->stream);
@@ -211,10 +209,10 @@ voxve_status_t voxve_shutdown()
 
 	/* Destroy Conf */
 	pj_rwmutex_lock_write(voxve_var.activeconfs_rwmutex);
-	std::map<int, voxve_conf_t*>::iterator iterator2 = voxve_var.activeconfs.begin();
+	std::map<int, conf_t*>::iterator iterator2 = voxve_var.activeconfs.begin();
 	while (iterator2 != voxve_var.activeconfs.end()) 
 	{
-		voxve_conf_t * conf = (*iterator2).second;
+		conf_t * conf = (*iterator2).second;
 
 		if (conf->p_conf != NULL)
 		{
@@ -261,7 +259,7 @@ voxve_status_t voxve_dtmf_dial(int channel_id, char *ascii_digit)
 {
 	register_thread();
 
-	voxve_channel_t * channel = channel_find(channel_id);
+	channel_t * channel = channel_find(channel_id);
 
 	if (channel != NULL)
 	{
