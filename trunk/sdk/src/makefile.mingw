@@ -36,7 +36,7 @@ SOURCES = $(wildcard *.c *.cpp)
 OBJS = $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SOURCES)))
 
 $(TARGET) : $(OBJS)
-	$(CXX) -shared -o $(OBJ_DIR)/$(TARGET) `for X in $(OBJS) ; do echo "$(OBJ_DIR)/$$X"; done` -Wl,--out-implib,lib$(APP_NAME).a $(_LDFLAGS)
+	$(CXX) -shared -o $(OBJ_DIR)/$(TARGET) `for X in $(OBJS) ; do echo "$(OBJ_DIR)/$$X"; done` -Wl,--out-implib,$(OBJ_DIR)/lib$(APP_NAME).a $(_LDFLAGS)
 
 all: $(TARGET)
 
