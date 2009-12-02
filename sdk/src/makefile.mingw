@@ -1,0 +1,44 @@
+#########################################################
+#
+# Makefile for MinGW + MSYS
+#
+#########################################################
+
+PJSIP_SRC_PATH = C:\msys\1.0\home\gang\pjproject-1.0.3
+
+include $(PJSIP_SRC_PATH)/build.mak
+include $(PJDIR)/build/common.mak
+
+RULES_MAK = $(PJDIR)/build/rules.mak
+
+include $(PJSIP_SRC_PATH)/build/common.mak
+
+OBJ_DIR = ../build
+SDK_INC_DIR = ../include
+
+export _CFLAGS = -Wall -pipe -g -DOPENMEDIAENGINE_EXPORTS -I$(SDK_INC_DIR) $(PJ_CFLAGS) $(CFLAGS)
+export _CXXFLAGS = -Wall -pipe -g -DOPENMEDIAENGINE_EXPORTS -DNDEBUG -D_REENTRANT -I$(SDK_INC_DIR) $(PJ_CXXFLAGS)
+export _LDFLAGS = $(PJ_LDFLAGS) $(PJ_LDLIBS) $(LDFLAGS)
+
+CC = gcc
+CXX = g++
+
+APP_NAME = openmediaengine
+TARGET := $(APP_NAME).dll
+
+%.o: %.c
+	$(CC) $(_CFLAGS) -c $< -o $(OBJ_DIR)/$@
+
+%.o: %.cpp
+	$(CXX) $(_CXXFLAGS) -c $< -o $(OBJ_DIR)/$@
+
+SOURCES = $(wildcard *.c *.cpp)
+OBJS = $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SOURCES)))
+
+$(TARGET) : $(OBJS)
+	$(CXX) -shared -o $(OBJ_DIR)/$(TARGET) `for X in $(OBJS) ; do echo "$(OBJ_DIR)/$$X"; done` -Wl,--out-implib,lib$(APP_NAME).a $(_LDFLAGS)
+
+all: $(TARGET)
+
+clean:
+	rm -rf $(OBJ_DIR)/*.o $(OBJ_DIR)/$(TARGET) $(OBJ_DIR)/lib$(APP_NAME).a
