@@ -1,3 +1,9 @@
+#########################################################
+#
+# Makefile for GNU/Linux GCC
+#
+#########################################################
+
 PJSIP_SRC_PATH = /home/gang/libs/pjproject-1.0.3
 
 include $(PJSIP_SRC_PATH)/build.mak
@@ -10,10 +16,8 @@ include $(PJSIP_SRC_PATH)/build/common.mak
 OBJ_DIR = ../build
 SDK_INC_DIR = ../include
 
-###############################################################################
-
 export _CFLAGS = -Wall -pipe -g -I$(SDK_INC_DIR) $(PJ_CFLAGS) $(CFLAGS)
-export _CXXFLAGS = -Wall -pipe -g -fomit-frame-pointer -fno-strict-aliasing -Wno-unused-label -DNDEBUG -D_REENTRANT -I$(SDK_INC_DIR) $(PJ_CXXFLAGS)
+export _CXXFLAGS = -Wall -pipe -g -DNDEBUG -D_REENTRANT -I$(SDK_INC_DIR) $(PJ_CXXFLAGS)
 export _LDFLAGS = $(PJ_LDFLAGS) $(PJ_LDLIBS) $(LDFLAGS)
 
 CC = gcc
