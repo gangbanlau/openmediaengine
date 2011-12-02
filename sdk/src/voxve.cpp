@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2009 Gang Liu <gangban.lau@gmail.com>
+ * Copyright (C) 2009-2011 Gang Liu <gangban.lau@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -98,13 +98,13 @@ static void default_setting()
 	voxve_var.is_no_vad = PJ_TRUE;
 
 	/* Echo canceller */
-	voxve_var.ec_tail_len = 200;
+	voxve_var.ec_tail_len = 200;	// PJSUA_DEFAULT_EC_TAIL_LEN	200
 
 	/* CLOCK RATE */
-	voxve_var.clock_rate = DEFAULT_CLOCK_RATE;
+	voxve_var.clock_rate = DEFAULT_CLOCK_RATE;				// PJSUA_DEFAULT_CLOCK_RATE	16000
 	voxve_var.snd_clock_rate = SND_DEFAULT_CLOCK_RATE;
 
-	voxve_var.audio_frame_ptime = DEFAULT_AUDIO_FRAME_PTIME;
+	voxve_var.audio_frame_ptime = DEFAULT_AUDIO_FRAME_PTIME;	// PJSUA_DEFAULT_AUDIO_FRAME_PTIME	20
 	voxve_var.channel_count = NCHANNELS;
 }
 
