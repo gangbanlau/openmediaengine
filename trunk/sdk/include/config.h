@@ -20,7 +20,7 @@
 
 /* Conf bridge Constants */
 #define DEFAULT_CLOCK_RATE	8000		/* The default clock rate to be used by the conference bridge */
-#define DEFAULT_AUDIO_FRAME_PTIME	10	/* Default frame length in the conference bridge. */
+#define DEFAULT_AUDIO_FRAME_PTIME	20	/* Default frame length in the conference bridge. */
 #define NCHANNELS	1
 #define NSAMPLES	(DEFAULT_CLOCK_RATE * DEFAULT_AUDIO_FRAME_PTIME / 1000 * NCHANNELS)
 #define NBITS		16

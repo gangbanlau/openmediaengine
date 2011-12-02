@@ -4,7 +4,7 @@
 #
 #########################################################
 
-PJSIP_SRC_PATH = /home/gang/libs/pjproject-1.0.3
+PJSIP_SRC_PATH = /home/gang/pjsip/src/pjproject-2.0-alpha2
 
 include $(PJSIP_SRC_PATH)/build.mak
 include $(PJDIR)/build/common.mak
