@@ -28,22 +28,32 @@ int main(int argc, char ** argv)
 {
 	voxve_status_t status;
 
-	if (argc != 6)
+	if (argc != 8)
 	{
-		cout << "Usage: " << argv[0] << " local_port remote_ip remote_port remote_ip_2 remote_port_2" << endl;
+		cout << "Usage: " << argv[0] << " conf_clock_rate snd_clock_rate local_port remote_ip remote_port remote_ip_2 remote_port_2" << endl;
 		return -1;
 	}
 
-	int local_port = atoi(argv[1]);
+	int clock_rate = atoi(argv[1]);
+	int snd_clock_rate = atoi(argv[2]);
+
+	int local_port = atoi(argv[3]);
 	/* Channel 1, will use CODEC_PCMA */
-	char * remote_ip_1 = argv[2];
-	int remote_port_1 = atoi(argv[3]);
+	char * remote_ip_1 = argv[4];
+	int remote_port_1 = atoi(argv[5]);
 	/* Channel 2, will use CODEC_PCMU */
-	char * remote_ip_2 = argv[4];
-	int remote_port_2 = atoi(argv[5]);
+	char * remote_ip_2 = argv[6];
+	int remote_port_2 = atoi(argv[7]);
 
 	status = voxve_init(0, 0, 0);
 	if (status != 0)	return status;
+
+	voxve_snd_set_clockrate(snd_clock_rate);
+
+	voxve_conf_set_clockrate(clock_rate);
+
+	int channel_1, channel_2;
+	int channel_1_slot, channel_2_slot;
 
 	cout << "Create conference bridge" << endl;
 	int conf_id = voxve_conf_create();
@@ -58,8 +68,8 @@ int main(int argc, char ** argv)
 	if (status != 0) goto on_error;
 
 	cout << "Create media channels" << endl;
-	int channel_1 = voxve_channel_create(local_port);
-	int channel_2 = voxve_channel_create(local_port + 2);
+	channel_1 = voxve_channel_create(local_port);
+	channel_2 = voxve_channel_create(local_port + 2);
 	if (channel_1 < 0 || channel_2 < 0)
 	{
 		cout << "Create channel fail" << endl;
@@ -73,8 +83,8 @@ int main(int argc, char ** argv)
 	if (status != 0) goto on_error;
 
 	cout << "Add channels into bridge" << endl;
-	int channel_1_slot = voxve_conf_addchannel(conf_id, channel_1);
-	int channel_2_slot = voxve_conf_addchannel(conf_id, channel_2);
+	channel_1_slot = voxve_conf_addchannel(conf_id, channel_1);
+	channel_2_slot = voxve_conf_addchannel(conf_id, channel_2);
 	
 	cout << "Connect channels each other" << endl;
 	status = voxve_conf_connect(conf_id, 0, channel_1_slot);
