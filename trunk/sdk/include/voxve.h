@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2009 Gang Liu <gangban.lau@gmail.com>
+ * Copyright (C) 2009-2011 Gang Liu <gangban.lau@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,12 +19,18 @@
 #ifndef VOXVE_H_
 #define VOXVE_H_
 
+#ifdef WIN32
+#include <pstdint.h>
+#else
+#include <stdint.h>
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#ifdef _WIN32
+#ifdef WIN32
 #ifdef OPENMEDIAENGINE_EXPORTS
 	#define OPENMEDIAENGINE_DLL_API __declspec(dllexport)
 #else
@@ -39,17 +45,73 @@ typedef int voxve_status_t;
 
 #define VOXVE_SUCCESS 	0
 
+/**
+ * Top most media type.
+ */
+typedef enum
+{
+    /** No type. */
+    MEDIA_TYPE_NONE = 0,
+
+    /** The media is audio */
+    MEDIA_TYPE_AUDIO = 1,
+
+    /** The media is video. */
+    MEDIA_TYPE_VIDEO = 2,
+
+	/** The media is image */
+	MEDIA_TYPE_IMAGE = 3,
+
+    /** Unknown media type, in this case the name will be specified in
+     *  encoding_name.
+     */
+    MEDIA_TYPE_UNKNOWN = 4,
+
+    /** The media is application. */
+    MEDIA_TYPE_APPLICATION = 5
+
+} voxve_media_type_t;
+
+typedef struct
+{
+	voxve_media_type_t type;
+
+	unsigned pt;
+	char encoding_name[16];
+
+	unsigned clock_rate;
+	unsigned channel_cnt;
+} voxve_codec_info_t;
+
 /* Stream Direction */
-typedef enum voxve_stream_dir 
+typedef enum
 {
 	STREAM_DIR_NONE = 0,
 	STREAM_DIR_ENCODING,
 	STREAM_DIR_DECODING,
 	STREAM_DIR_ENCODING_DECODING
-} voxve_stream_dir;
+} voxve_stream_dir_t;
+
+typedef struct
+{
+	voxve_media_type_t type;
+
+	voxve_stream_dir_t dir;
+
+	char remote_ip[16];
+	uint16_t remote_port;
+
+	voxve_codec_info_t fmt;		/* Incoming codec format info. */
+	uint16_t frm_ptime;
+	uint16_t enc_ptime;			/* Encoder ptime, or zero if it's equal to decoder ptime */
+	int tx_pt;
+	int tx_event_pt;
+	int rx_event_pt;
+	uint32_t ssrc;
+} voxve_stream_info_t;
 
 /** Audio codec **/
-typedef enum voxve_codec_id 
+typedef enum
 {
   CODEC_PCMU = 0,
   CODEC_GSM = 3,
@@ -67,13 +129,13 @@ typedef struct
     unsigned	default_samples_per_sec;/* Default sampling rate.	    */
 } voxve_snd_dev_info_t;
 
-enum voxve_port_op
+typedef enum
 {
 	PORT_NO_CHANGE, 	/* No change to the port TX or RX settings. */
 	PORT_DISABLE, 		/* TX or RX is disabled from the port. It means get_frame() or put_frame() WILL NOT be called for this port. */
 	PORT_MUTE, 			/* TX or RX is muted, which means that get_frame() or put_frame() will still be called, but the audio frame is discarded. */
 	PORT_ENABLE 		/* Enable TX and RX to/from this port. */
-};
+} voxve_port_op_t;
 
 
 /** ############# Initialization ################### **/
@@ -152,19 +214,25 @@ OPENMEDIAENGINE_DLL_API void voxve_disable_stereo();
 
 /** Create new channel, return channel id or -1 if an error occurred **/
 OPENMEDIAENGINE_DLL_API int voxve_channel_create(unsigned short local_port);
+OPENMEDIAENGINE_DLL_API int voxve_channel_create2(const char* local_ip, unsigned short local_port);
 
 /** Release a channel **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_delete(int channel_id);
 
 /** Start streaming **/
-OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_startstream(int channel_id, voxve_codec_id_t codec, unsigned int ptime, char * remote_ip, unsigned short remote_port, voxve_stream_dir dir);
-OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_startstream2(int channel_id, voxve_codec_id_t codec, unsigned int ptime, unsigned int rtp_ssrc, char * remote_ip, unsigned short remote_port, voxve_stream_dir dir);
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_startstream(int channel_id, voxve_codec_id_t codec,
+		unsigned int ptime, const char * remote_ip, unsigned short remote_port, voxve_stream_dir_t dir);
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_startstream2(int channel_id, voxve_codec_id_t codec,
+		unsigned int ptime, unsigned int rtp_ssrc, const char * remote_ip, unsigned short remote_port, voxve_stream_dir_t dir);
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_startstream3(int channel_id, const char* codec, int rtp_dynamic_payload,
+		unsigned int ptime, int telephone_event_payload, unsigned int rtp_ssrc, const char * remote_ip, unsigned short remote_port, voxve_stream_dir_t dir);
 
 /** Stop streaming **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_stopstream(int channel_id);
 
 /** Modify current channel **/
-OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_update(int channel_id, voxve_codec_id_t codec, unsigned int ptime, unsigned short local_port, char * remote_ip, unsigned short remote_port, voxve_stream_dir dir);
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_update(int channel_id, voxve_codec_id_t codec,
+		unsigned int ptime, unsigned short local_port, const char * remote_ip, unsigned short remote_port, voxve_stream_dir_t dir);
 
 /** Connected to the sound device for that specific channel **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_startplayout(int channel_id);
@@ -186,7 +254,7 @@ OPENMEDIAENGINE_DLL_API int voxve_channel_getlimit();
 
 /** Transmit DTMF to this stream. The DTMF will be transmitted uisng RTP telephone-events as described in RFC 2833. **/
 /** Currently the maximum number of digits are 32. **/
-OPENMEDIAENGINE_DLL_API voxve_status_t voxve_dtmf_dial(int channel, char *ascii_digit);
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_dtmf_dial(int channel, const char *ascii_digit);
 
 
 
@@ -199,6 +267,7 @@ OPENMEDIAENGINE_DLL_API void voxve_conf_set_clockrate(unsigned conf_clock_rate);
 
 /** Create conference bridge, return bridge id or -1 if an error occurred **/
 OPENMEDIAENGINE_DLL_API int voxve_conf_create();
+OPENMEDIAENGINE_DLL_API int voxve_conf_create2(unsigned max_slots);
 
 /** Release a bridge **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_conf_destroy(int conf_id);
@@ -245,7 +314,7 @@ OPENMEDIAENGINE_DLL_API voxve_status_t voxve_conf_adjustrxlevel(int conf_id, uns
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_conf_adjusttxlevel(int conf_id, unsigned slot, int adj_level); 
 
 /* Change TX and RX settings for the port. */
-OPENMEDIAENGINE_DLL_API voxve_status_t voxve_conf_configureport(int conf_id, unsigned slot, voxve_port_op tx_op, voxve_port_op rx_op);
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_conf_configureport(int conf_id, unsigned slot, voxve_port_op_t tx_op, voxve_port_op_t rx_op);
 
 
 

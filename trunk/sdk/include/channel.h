@@ -26,6 +26,8 @@
 /* Channel */
 typedef struct
 {
+	pj_pool_t *pool;
+
 	int id;											/* unique id */
 
 	pjmedia_stream *stream;
@@ -46,7 +48,7 @@ typedef struct
 
 channel_t * channel_find(int channel_id);
 
-int channel_internalcreate(channel_t * channel, unsigned short local_port);
+int channel_internalcreate(channel_t * channel, const char* local_ip, unsigned short local_port);
 
 voxve_status_t channel_connectnullsnd(channel_t * channel);
 

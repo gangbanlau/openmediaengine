@@ -16,8 +16,8 @@ include $(PJSIP_SRC_PATH)/build/common.mak
 OBJ_DIR = ../build
 SDK_INC_DIR = ../include
 
-export _CFLAGS = -Wall -pipe -g -I$(SDK_INC_DIR) $(PJ_CFLAGS) $(CFLAGS)
-export _CXXFLAGS = -Wall -pipe -g -DNDEBUG -D_REENTRANT -I$(SDK_INC_DIR) $(PJ_CXXFLAGS)
+export _CFLAGS = -Wall -pipe -g -DNDEBUG -I$(SDK_INC_DIR) $(PJ_CFLAGS) $(CFLAGS)
+export _CXXFLAGS = -Wall -pipe -g -DNDEBUG -I$(SDK_INC_DIR) $(PJ_CXXFLAGS)
 export _LDFLAGS = $(PJ_LDFLAGS) $(PJ_LDLIBS) $(LDFLAGS)
 
 CC = gcc

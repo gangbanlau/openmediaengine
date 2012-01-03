@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2009 Gang Liu <gangban.lau@gmail.com>
+ * Copyright (C) 2009-2011 Gang Liu <gangban.lau@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 
 #include "pj_inc.h"
 
+#include "voxve.h"
+
 /** Codec **/
 pj_status_t codecs_init(pjmedia_endpt *med_endpt);
 
@@ -27,15 +29,9 @@ pj_status_t codecs_deinit(pjmedia_endpt *med_endpt);
 
 
 /** Media Stream **/
-pj_status_t stream_create( pj_pool_t *pool,
-				  pjmedia_endpt *med_endpt,
-				  const pjmedia_codec_info *codec_info,
-				  unsigned int ptime,
-				  unsigned int rtp_ssrc,
-				  pjmedia_dir dir,
-				  pjmedia_transport *transport,
-				  const pj_sockaddr_in *rem_addr,
-				  pjmedia_stream **p_stream);
+pj_status_t stream_create(pj_pool_t *pool, pjmedia_endpt *med_endpt, voxve_stream_info_t *stream_info,
+		const pjmedia_codec_info *codec_info, pjmedia_transport *transport, const pj_sockaddr_in *rem_addr,
+		pjmedia_stream **p_stream);
 
 /** Misc **/
 void register_thread();				/* Register external thread */

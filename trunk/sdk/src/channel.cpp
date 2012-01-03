@@ -47,7 +47,7 @@ channel_t * channel_find(int channel_id)
 	return channel;
 }
 
-int channel_internalcreate(channel_t * channel, unsigned short local_port)
+int channel_internalcreate(channel_t * channel, const char *local_ip, unsigned short local_port)
 {
 	/* Create media transport */
 	pjmedia_transport *transport = NULL;
@@ -79,6 +79,11 @@ int channel_internalcreate(channel_t * channel, unsigned short local_port)
 			/* FIXME free rtp/rtcp sock */
 			return -1;
 		}
+	}
+	else if (local_ip != NULL)
+	{
+		pj_str_t addr = pj_str((char *)local_ip);
+		status = pjmedia_transport_udp_create2(voxve_var.med_endpt, NULL, &addr, local_port, 0, &transport);
 	}
 	else
 		status = pjmedia_transport_udp_create(voxve_var.med_endpt, NULL, local_port, 0, &transport);

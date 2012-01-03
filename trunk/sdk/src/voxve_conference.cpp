@@ -30,12 +30,17 @@ extern struct voxve_data voxve_var;
 
 int voxve_conf_create()
 {
+	return voxve_conf_create2(CONF_MAX_SLOTS);
+}
+
+int voxve_conf_create2(unsigned max_slots)
+{
 	register_thread();
 
 	pj_status_t status;
 	pjmedia_conf * p_conf = NULL;
 
-	status = pjmedia_conf_create(voxve_var.pool, CONF_MAX_SLOTS, voxve_var.clock_rate, voxve_var.channel_count,
+	status = pjmedia_conf_create(voxve_var.pool, max_slots, voxve_var.clock_rate, voxve_var.channel_count,
 			(voxve_var.clock_rate * voxve_var.audio_frame_ptime / 1000 * voxve_var.channel_count), NBITS,
 			PJMEDIA_CONF_NO_DEVICE, &p_conf
 			);
@@ -443,7 +448,7 @@ voxve_status_t voxve_conf_adjusttxlevel(int conf_id, unsigned slot, int adj_leve
 
 }
 
-voxve_status_t voxve_conf_configureport(int conf_id, unsigned slot, voxve_port_op tx_op, voxve_port_op rx_op)
+voxve_status_t voxve_conf_configureport(int conf_id, unsigned slot, voxve_port_op_t tx_op, voxve_port_op_t rx_op)
 {
 	register_thread();
 
