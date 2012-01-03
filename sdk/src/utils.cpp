@@ -18,9 +18,9 @@
 
 #include "utils.h"
 
-#include "global.h"
-
 #include <list>
+
+#include "global.h"
 
 #define THIS_FILE	"utils.cpp"
 
@@ -98,15 +98,9 @@ pj_atomic_value_t getavailableid(pj_atomic_t * atomic_var)
 /* 
  * Create stream based on the codec, dir, remote address, etc. 
  */
-pj_status_t stream_create( pj_pool_t *pool,
-				  pjmedia_endpt *med_endpt,
-				  const pjmedia_codec_info *codec_info,
-				  unsigned int ptime,
-				  unsigned int rtp_ssrc,
-				  pjmedia_dir dir,
-				  pjmedia_transport *transport,
-				  const pj_sockaddr_in *rem_addr,
-				  pjmedia_stream **p_stream)
+pj_status_t stream_create(pj_pool_t *pool, pjmedia_endpt *med_endpt, voxve_stream_info_t *stream_info,
+		const pjmedia_codec_info *codec_info, pjmedia_transport *transport, const pj_sockaddr_in *rem_addr,
+		pjmedia_stream **p_stream)
 {
     pjmedia_stream_info info;
     pj_status_t status;
@@ -115,15 +109,48 @@ pj_status_t stream_create( pj_pool_t *pool,
     pj_bzero(&info, sizeof(info));
 
     /* Initialize stream info formats */
-    info.type = PJMEDIA_TYPE_AUDIO;									/* Media type */
-    info.dir = dir;													/* Media direction. */
+#if 0
+    switch (stream_info->type)
+    {
+    case MEDIA_TYPE_AUDIO:
+    	info.type = PJMEDIA_TYPE_AUDIO;									/* Media type */
+    	break;
+    case MEDIA_TYPE_VIDEO:
+    	info.type = PJMEDIA_TYPE_VIDEO;
+    	break;
+    default:
+    	return -1;
+    }
+#endif
+    info.type = codec_info->type;
+
+	switch (stream_info->dir)
+	{
+	case STREAM_DIR_NONE:
+		info.dir = PJMEDIA_DIR_NONE;		/* Media direction. */
+		break;
+	case STREAM_DIR_ENCODING:
+		info.dir = PJMEDIA_DIR_ENCODING;
+		break;
+	case STREAM_DIR_DECODING:
+		info.dir = PJMEDIA_DIR_DECODING;
+		break;
+	case STREAM_DIR_ENCODING_DECODING:
+		info.dir = PJMEDIA_DIR_ENCODING_DECODING;
+		break;
+	default:
+		info.dir = PJMEDIA_DIR_ENCODING_DECODING;
+	}
+
     pj_memcpy(&info.fmt, codec_info, sizeof(pjmedia_codec_info));	/* Incoming codec format info. */
-    info.tx_pt = codec_info->pt;									/* Outgoing codec paylaod type. */
-	if (rtp_ssrc == 0)
+
+    info.tx_pt = stream_info->tx_pt;							/* Outgoing codec paylaod type. */
+	if (stream_info->ssrc == 0)
 		info.ssrc = pj_rand();										/* RTP SSRC. */
 	else
-		info.ssrc = rtp_ssrc;
-	info.tx_event_pt = 101;											/* Remote support telephone-events RFC 2833, otherwise we can't use pjmedia_stream_dial_dtmf(), check PJSIP FAQ about DTMF */
+		info.ssrc = stream_info->ssrc;
+	if (stream_info->tx_event_pt >= 96)
+		info.tx_event_pt = stream_info->tx_event_pt;				/* Remote support telephone-events RFC 2833, otherwise we can't use pjmedia_stream_dial_dtmf(), check PJSIP FAQ about DTMF */
 
 	pjmedia_codec_param param;
 	pjmedia_codec_mgr *codec_mgr = pjmedia_endpt_get_codec_mgr(voxve_var.med_endpt);
@@ -138,7 +165,7 @@ pj_status_t stream_create( pj_pool_t *pool,
 	else
 		param.setting.vad = 1;
 
-	param.setting.frm_per_pkt = (pj_uint8_t)(ptime / param.info.frm_ptime);
+	param.setting.frm_per_pkt = (pj_uint8_t)(stream_info->frm_ptime / param.info.frm_ptime);
 
 	info.param = &param;
 
@@ -175,10 +202,9 @@ static std::list<external_thread_t *> registered_threads;
 
 void register_thread()
 {
-	external_thread_t * e_thread = new external_thread_t;
-
 	if(!pj_thread_is_registered()) 
 	{
+		external_thread_t * e_thread = (external_thread_t*)pj_pool_zalloc(voxve_var.pool, sizeof(external_thread_t));
 
 		pj_thread_register(NULL, e_thread->desc, &(e_thread->thread));
 
@@ -186,6 +212,4 @@ void register_thread()
 
 		registered_threads.push_back(e_thread);
 	}
-	else
-		delete e_thread;
 }

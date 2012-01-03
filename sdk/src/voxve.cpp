@@ -170,64 +170,52 @@ voxve_status_t voxve_shutdown()
 {
 	register_thread();
 
-	/* Atomic Variables, available id */
-    pj_atomic_destroy(voxve_var.atomic_var);
-
 	/* Destroy stream */
-	pj_rwmutex_lock_write(voxve_var.activechannels_rwmutex);
-	std::map<int, channel_t*>::iterator iterator = voxve_var.activechannels.begin();
-	while (iterator != voxve_var.activechannels.end()) 
-	{
-		channel_t * channel = (*iterator).second;
+    while (voxve_var.activechannels.size() > 0)
+    {
+    	channel_t * channel = NULL;
+    	pj_rwmutex_lock_read(voxve_var.activechannels_rwmutex);
+    	std::map<int, channel_t*>::const_iterator iterator = voxve_var.activechannels.begin();
+    	if (iterator != voxve_var.activechannels.end())
+    	{
+    		channel = (*iterator).second;
+    	}
+    	pj_rwmutex_unlock_read(voxve_var.activechannels_rwmutex);
 
-		/* Destroy sound device */
-		if (channel->snd_port != NULL) 
-		{
-			snd_close(channel->snd_port);
-			channel->snd_port = NULL;
-		}
-
-		if (channel->stream)
-		{
-			pjmedia_transport *tp;
-
-			tp = pjmedia_stream_get_transport(channel->stream);
-			pjmedia_stream_destroy(channel->stream);
-			pjmedia_transport_close(tp);
-
-			channel->stream = NULL;
-		}
-
-		delete channel;
-
-		iterator++;
-	}
-	voxve_var.activechannels.clear();
-	pj_rwmutex_unlock_write(voxve_var.activechannels_rwmutex);
+    	if (channel != NULL)
+    	{
+    		if (voxve_channel_delete(channel->id) != VOXVE_SUCCESS)
+    			logging(THIS_FILE, VOXVE_LOG_WARN, "delete channel %d failed", channel->id);
+    		channel = NULL;
+    	}
+    }
 
 	pj_rwmutex_destroy(voxve_var.activechannels_rwmutex);
 
 	/* Destroy Conf */
-	pj_rwmutex_lock_write(voxve_var.activeconfs_rwmutex);
-	std::map<int, conf_t*>::iterator iterator2 = voxve_var.activeconfs.begin();
-	while (iterator2 != voxve_var.activeconfs.end()) 
+	while (voxve_var.activeconfs.size() > 0)
 	{
-		conf_t * conf = (*iterator2).second;
-
-		if (conf->p_conf != NULL)
+		conf_t * conf = NULL;
+		pj_rwmutex_lock_read(voxve_var.activeconfs_rwmutex);
+		std::map<int, conf_t*>::iterator iterator2 = voxve_var.activeconfs.begin();
+		if (iterator2 != voxve_var.activeconfs.end())
 		{
-			pjmedia_conf_destroy(conf->p_conf);
-			conf->p_conf = NULL;
+			conf = iterator2->second;
 		}
+		pj_rwmutex_unlock_read(voxve_var.activeconfs_rwmutex);
 
-		delete conf;
-
-		iterator2++;
+		if (conf != NULL)
+		{
+			if (voxve_conf_destroy(conf->id) != VOXVE_SUCCESS)
+				logging(THIS_FILE, VOXVE_LOG_WARN, "delete conf %d failed", conf->id);
+			conf = NULL;
+		}
 	}
-	voxve_var.activeconfs.clear();
-	pj_rwmutex_unlock_write(voxve_var.activeconfs_rwmutex);
 
 	pj_rwmutex_destroy(voxve_var.activeconfs_rwmutex);
+
+	/* Atomic Variables, available id */
+    pj_atomic_destroy(voxve_var.atomic_var);
 
 	codecs_deinit(voxve_var.med_endpt);
 
@@ -255,7 +243,7 @@ void voxve_strerror(voxve_status_t statuscode, char *buf, int bufsize)
 	pj_strerror(statuscode, buf, bufsize);
 }
 
-voxve_status_t voxve_dtmf_dial(int channel_id, char *ascii_digit)
+voxve_status_t voxve_dtmf_dial(int channel_id, const char *ascii_digit)
 {
 	register_thread();
 
@@ -263,7 +251,7 @@ voxve_status_t voxve_dtmf_dial(int channel_id, char *ascii_digit)
 
 	if (channel != NULL)
 	{
-		pj_str_t digits = pj_str(ascii_digit);
+		pj_str_t digits = pj_str((char *)ascii_digit);
 		return pjmedia_stream_dial_dtmf(channel->stream, &digits);
 	}
 	else

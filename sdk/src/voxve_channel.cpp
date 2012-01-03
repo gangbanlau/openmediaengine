@@ -28,73 +28,81 @@ extern struct voxve_data voxve_var;
 
 int voxve_channel_create(unsigned short local_port)
 {
+	return voxve_channel_create2(NULL, local_port);
+}
+
+int voxve_channel_create2(const char* local_ip, unsigned short local_port)
+{
 	register_thread();
 
 	int channel_id = getavailableid(voxve_var.atomic_var);
 
-	channel_t * channel = new channel_t;
+	pj_pool_t *pool = pj_pool_create( &voxve_var.cp.factory,	    /* pool factory	    */
+			   "channel%p",											/* pool name.	    */
+			   256,													/* init size	    */
+			   256,													/* increment size	    */
+			   NULL													/* callback on error    */
+			   );
+
+	channel_t * channel = (channel_t *)pj_pool_zalloc(pool, sizeof(channel_t));
+	channel->pool = pool;
 	channel->id = channel_id;
 
-	int rtCode = channel_internalcreate(channel, local_port);
+	int rtCode = channel_internalcreate(channel, local_ip, local_port);
 
 	if (rtCode != 0)
 	{
-		delete channel;
+		pj_pool_release(pool);
 		return -1;
 	}
 	else
 		return channel_id;
 }
 
-voxve_status_t voxve_channel_startstream(int channel_id, voxve_codec_id_t codec, unsigned int ptime, char * remote_ip, unsigned short remote_port, voxve_stream_dir dir)
+voxve_status_t voxve_channel_startstream(int channel_id, voxve_codec_id_t codec, unsigned int ptime,
+		const char * remote_ip, unsigned short remote_port, voxve_stream_dir_t dir)
 {
 	return voxve_channel_startstream2(channel_id, codec, ptime, 0, remote_ip, remote_port, dir);
 }
 
-voxve_status_t voxve_channel_startstream2(int channel_id, voxve_codec_id_t codec, unsigned int ptime, unsigned int rtp_ssrc, char * remote_ip, unsigned short remote_port, voxve_stream_dir dir)
+voxve_status_t voxve_channel_startstream2(int channel_id, voxve_codec_id_t codec, unsigned int ptime,
+		unsigned int rtp_ssrc, const char * remote_ip, unsigned short remote_port, voxve_stream_dir_t dir)
 {
-	register_thread();
-
-	/* Find which codec to use. */
-	pj_str_t str_codec_id;
+	int telephone_event_pt = 101;
+	const char* str_codec_id;
 
 	switch(codec)
 	{
 	case CODEC_G729:
-		str_codec_id = pj_str("g729");
+		str_codec_id = "G729";
 		break;
 	case CODEC_PCMU:
-		str_codec_id = pj_str("pcmu");
+		str_codec_id = "PCMU";
 		break;
 	case CODEC_PCMA:
-		str_codec_id = pj_str("pcma");
+		str_codec_id = "PCMA";
 		break;
 	case CODEC_GSM:
-		str_codec_id = pj_str("gsm");
+		str_codec_id = "GSM";
 		break;
 	default:
-		str_codec_id = pj_str("pcmu");
+		return -1;
 	}
 
-	pjmedia_dir pj_dir;
+	return voxve_channel_startstream3(channel_id, str_codec_id, -1, ptime, telephone_event_pt, rtp_ssrc,
+			remote_ip, remote_port, dir);
+}
 
-	switch (dir)
-	{
-	case STREAM_DIR_NONE:
-		pj_dir = PJMEDIA_DIR_NONE;
-		break;
-	case STREAM_DIR_ENCODING:
-		pj_dir = PJMEDIA_DIR_ENCODING;
-		break;
-	case STREAM_DIR_DECODING:
-		pj_dir = PJMEDIA_DIR_DECODING;
-		break;
-	case STREAM_DIR_ENCODING_DECODING:
-		pj_dir = PJMEDIA_DIR_ENCODING_DECODING;
-		break;
-	default:
-		pj_dir = PJMEDIA_DIR_ENCODING_DECODING;
-	}
+voxve_status_t channel_startstream(int channel_id, const pjmedia_codec_info * codec_info, voxve_stream_info_t *stream_info);
+
+voxve_status_t voxve_channel_startstream3(int channel_id, const char* codec, int rtp_dynamic_payload, unsigned int ptime,
+		int telephone_event_payload, unsigned int rtp_ssrc, const char * remote_ip, unsigned short remote_port, voxve_stream_dir_t dir)
+{
+	unsigned rtp_payload;
+
+	register_thread();
+
+	pj_str_t str_codec_id = pj_str((char *)codec);
 
 	const pjmedia_codec_info *codec_info;
 	unsigned count = 1;
@@ -104,23 +112,51 @@ voxve_status_t voxve_channel_startstream2(int channel_id, voxve_codec_id_t codec
 	if (status != PJ_SUCCESS)
 	{
 //	    printf("Error: unable to find codec %s\n", codec_id);
-	    return -1;
+	    return status;
 	}
+
+	if (rtp_dynamic_payload >= 96)
+		rtp_payload = rtp_dynamic_payload;	/* overwrite codec info */
+	else
+		rtp_payload = codec_info->pt;	/* static or dynamic */
+
+	voxve_stream_info_t stream_info;
+	pj_bzero(&stream_info, sizeof(stream_info));
+
+//	stream_info.type = MEDIA_TYPE_AUDIO;
+	stream_info.dir = dir;
+	stream_info.remote_port = remote_port;
+	pj_ansi_snprintf(stream_info.remote_ip, sizeof(stream_info.remote_ip), "%s", remote_ip);
+//	stream_info.fmt.type = MEDIA_TYPE_AUDIO;
+	stream_info.fmt.pt = rtp_payload;
+//	pj_ansi_snprintf(stream_info.fmt.encoding_name, sizeof(stream_info.fmt.encoding_name), "%s", codec);
+//	stream_info.fmt.clock_rate = 8000;
+//	stream_info.fmt.channel_cnt = 1;
+	stream_info.frm_ptime = stream_info.enc_ptime = ptime;
+	stream_info.tx_pt = rtp_payload;
+	stream_info.tx_event_pt = stream_info.rx_event_pt = telephone_event_payload;	/* telephone-event */
+	stream_info.ssrc = rtp_ssrc;
+
+	return channel_startstream(channel_id, codec_info, &stream_info);
+
+}
+
+voxve_status_t channel_startstream(int channel_id, const pjmedia_codec_info * codec_info, voxve_stream_info_t *stream_info)
+{
+	register_thread();
+
+	pj_str_t ip = pj_str(stream_info->remote_ip);
+	pj_uint16_t port = (pj_uint16_t)stream_info->remote_port;
 
 	/* remote media addr */
 	pj_sockaddr_in remote_addr;
-	pj_bzero(&remote_addr, sizeof(remote_addr));
-	pj_str_t ip = pj_str(remote_ip);
-	pj_uint16_t port = (pj_uint16_t)remote_port;
-
-	status = pj_sockaddr_in_init(&remote_addr, &ip, port);
+	pj_status_t status = pj_sockaddr_in_init(&remote_addr, &ip, port);
 	if (status != PJ_SUCCESS)
 	{
-		    return -1;
+		return status;
 	}
 
 	channel_t * channel = channel_find(channel_id);
-
 	if (channel == NULL)
 	{
 		return -1;
@@ -128,8 +164,8 @@ voxve_status_t voxve_channel_startstream2(int channel_id, voxve_codec_id_t codec
 
     /* Create stream based on arguments */
 	pjmedia_stream *stream = NULL;
-	status = stream_create(voxve_var.pool, voxve_var.med_endpt, codec_info, ptime, rtp_ssrc, pj_dir, channel->transport,
-			   &remote_addr, &stream);
+	status = stream_create(channel->pool, voxve_var.med_endpt, stream_info, codec_info,
+			channel->transport, &remote_addr, &stream);
 
 	if (status != PJ_SUCCESS)
 		return -1;
@@ -149,7 +185,6 @@ voxve_status_t voxve_channel_startstream2(int channel_id, voxve_codec_id_t codec
 		/* Null Snd provide clock timing */
 		return channel_connectnullsnd(channel);
 	}
-
 }
 
 voxve_status_t voxve_channel_stopstream(int channel_id)
@@ -226,7 +261,7 @@ voxve_status_t voxve_channel_delete(int channelid)
 
 		}
 
-		delete channel;
+		pj_pool_release(channel->pool);
 
 		if (hasError)
 			return -1;
@@ -242,8 +277,6 @@ voxve_status_t voxve_channel_startplayout(int channelid)
 	register_thread();
 
 	channel_t * channel = channel_find(channelid);
-	pj_status_t status;
-
 	if (channel != NULL)
 	{
 		if (channel->snd_port != NULL)
@@ -251,7 +284,7 @@ voxve_status_t voxve_channel_startplayout(int channelid)
 
 		/* Get the port interface of the stream */
 		pjmedia_port *stream_port = NULL;
-		status = pjmedia_stream_get_port(channel->stream, &stream_port);
+		pj_status_t status = pjmedia_stream_get_port(channel->stream, &stream_port);
 		PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
 
 		/* Create sound device port. */
@@ -262,7 +295,9 @@ voxve_status_t voxve_channel_startplayout(int channelid)
 #define USEC_IN_SEC (pj_uint64_t)1000000
 		unsigned samples_per_frame = stream_port->info.fmt.det.aud.frame_time_usec * stream_port->info.fmt.det.aud.clock_rate
 					* stream_port->info.fmt.det.aud.channel_count / USEC_IN_SEC;
-		status = pjmedia_snd_port_create(voxve_var.pool, voxve_var.sound_rec_id, voxve_var.sound_play_id,
+		PJ_LOG(3, (THIS_FILE, "Opening sound device PCM@%u/%u/%ums", stream_port->info.fmt.det.aud.clock_rate,
+				stream_port->info.fmt.det.aud.channel_count, stream_port->info.fmt.det.aud.frame_time_usec / 1000));
+		status = pjmedia_snd_port_create(channel->pool, voxve_var.sound_rec_id, voxve_var.sound_play_id,
 					stream_port->info.fmt.det.aud.clock_rate,
 					stream_port->info.fmt.det.aud.channel_count,
 					samples_per_frame,
@@ -271,7 +306,7 @@ voxve_status_t voxve_channel_startplayout(int channelid)
 		PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
 
 		/* Set AEC */
-		pjmedia_snd_port_set_ec(snd_port, voxve_var.pool, voxve_var.ec_tail_len, 0);
+		pjmedia_snd_port_set_ec(snd_port, channel->pool, voxve_var.ec_tail_len, 0);
 
 		channel_disconnectnullsnd(channel);
 
@@ -331,7 +366,8 @@ voxve_status_t voxve_channel_putonhold(int channelid, bool enable)
 	}
 }
 
-voxve_status_t voxve_channel_update(int channel_id, voxve_codec_id_t codec, unsigned int ptime, unsigned short local_port, char * remote_ip, unsigned short remote_port, voxve_stream_dir dir)
+voxve_status_t voxve_channel_update(int channel_id, voxve_codec_id_t codec, unsigned int ptime,
+		unsigned short local_port, const char * remote_ip, unsigned short remote_port, voxve_stream_dir_t dir)
 {
 	register_thread();
 
@@ -373,7 +409,7 @@ voxve_status_t voxve_channel_update(int channel_id, voxve_codec_id_t codec, unsi
 		}
 	}
 
-	int result = channel_internalcreate(channel, local_port);
+	int result = channel_internalcreate(channel, NULL, local_port);
 
 	if (result == -1)
 		return -1;

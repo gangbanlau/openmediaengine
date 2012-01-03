@@ -1,5 +1,8 @@
 PJSIP_SRC_PATH = /home/gang/pjsip/src/pjproject-2.0-alpha2
 
+# google gflags
+GOOGLE_GFLAGS_PATH = /home/gang/google/install
+
 include $(PJSIP_SRC_PATH)/build.mak
 include $(PJDIR)/build/common.mak
 
@@ -16,8 +19,8 @@ SDKDIR = ../sdk
 ###############################################################################
 
 export _CFLAGS = -Wall -pipe -g -I$(SDKDIR)/include $(PJ_CFLAGS) $(CFLAGS)
-export _CXXFLAGS = -Wall -pipe -g -I$(SDKDIR)/include $(PJ_CXXFLAGS) $(CXXFLAGS)
-export _LDFLAGS = $(SDKDIR)/build/libopenmediaengine.a $(PJ_LDFLAGS) $(PJ_LDLIBS) $(LDFLAGS)
+export _CXXFLAGS = -Wall -pipe -g -I$(SDKDIR)/include $(PJ_CXXFLAGS) $(CXXFLAGS) -I$(GOOGLE_GFLAGS_PATH)/include
+export _LDFLAGS = $(SDKDIR)/build/libopenmediaengine.a $(PJ_LDFLAGS) $(PJ_LDLIBS) $(LDFLAGS) -L$(GOOGLE_GFLAGS_PATH)/lib -lgflags
 
 CC=gcc
 CXX=g++
