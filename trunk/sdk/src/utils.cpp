@@ -56,6 +56,11 @@ pj_status_t codecs_init(pjmedia_endpt *med_endpt)
     PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
 #endif
 
+#if defined(PJMEDIA_HAS_SILK_CODEC) && PJMEDIA_HAS_SILK_CODEC != 0
+    status = pjmedia_codec_silk_init(med_endpt);
+    PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
+#endif
+
     return PJ_SUCCESS;
 }
 
@@ -83,6 +88,11 @@ pj_status_t codecs_deinit(pjmedia_endpt *med_endpt)
 
 #if defined(PJMEDIA_HAS_L16_CODEC) && PJMEDIA_HAS_L16_CODEC!=0
     status = pjmedia_codec_l16_deinit();
+    PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
+#endif
+
+#if defined(PJMEDIA_HAS_SILK_CODEC) && PJMEDIA_HAS_SILK_CODEC != 0
+    status = pjmedia_codec_silk_deinit();
     PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
 #endif
 
