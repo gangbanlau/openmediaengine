@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2009 Gang Liu <gangban.lau@gmail.com>
+ * Copyright (C) 2009-2012 Gang Liu <gangban.lau@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -122,14 +122,14 @@ voxve_status_t channel_connectnullsnd(channel_t * channel)
 #define USEC_IN_SEC (pj_uint64_t)1000000
 	unsigned samples_per_frame = stream_port->info.fmt.det.aud.frame_time_usec * stream_port->info.fmt.det.aud.clock_rate
 				* stream_port->info.fmt.det.aud.channel_count / USEC_IN_SEC;
-	status = pjmedia_null_port_create(voxve_var.pool, 
+	status = pjmedia_null_port_create(channel->pool,
 				stream_port->info.fmt.det.aud.clock_rate, stream_port->info.fmt.det.aud.channel_count,
 				samples_per_frame, stream_port->info.fmt.det.aud.bits_per_sample,
 				&null_snd);
 	PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
 		
 	pjmedia_master_port *master_port = NULL;
-	status = pjmedia_master_port_create(voxve_var.pool, null_snd, stream_port, 0, &master_port);
+	status = pjmedia_master_port_create(channel->pool, null_snd, stream_port, 0, &master_port);
 	if (status != PJ_SUCCESS)
 	{
 		pjmedia_port_destroy(null_snd);
