@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2009 Gang Liu <gangban.lau@gmail.com>
+ * Copyright (C) 2009-2012 Gang Liu <gangban.lau@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,6 +16,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
 
+#ifndef __OPENMEDIAENGINE__
+#error only libopenmediaengine should #include this header
+#endif
+
 #ifndef _CONFERENCE_H_
 #define _CONFERENCE_H_
 
@@ -24,6 +28,8 @@
 /* Conference bridge */
 typedef struct
 {
+	pj_pool_t *pool;
+
 	int id;											/* unique id */
 
 	pjmedia_conf *p_conf;

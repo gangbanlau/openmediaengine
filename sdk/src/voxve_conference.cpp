@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Gang Liu <gangban.lau@gmail.com>
+ * Copyright (C) 2011-2012 Gang Liu <gangban.lau@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,21 +37,33 @@ int voxve_conf_create2(unsigned max_slots)
 {
 	register_thread();
 
+	pj_pool_t *pool = pj_pool_create( &voxve_var.cp.factory,	    /* pool factory	    */
+			   "conf%p",											/* pool name.	    */
+			   256,													/* init size	    */
+			   256,													/* increment size	    */
+			   NULL													/* callback on error    */
+			   );
+
 	pj_status_t status;
 	pjmedia_conf * p_conf = NULL;
 
-	status = pjmedia_conf_create(voxve_var.pool, max_slots, voxve_var.clock_rate, voxve_var.channel_count,
+	status = pjmedia_conf_create(pool, max_slots, voxve_var.clock_rate, voxve_var.channel_count,
 			(voxve_var.clock_rate * voxve_var.audio_frame_ptime / 1000 * voxve_var.channel_count), NBITS,
 			PJMEDIA_CONF_NO_DEVICE, &p_conf
 			);
-	PJ_ASSERT_RETURN(status == PJ_SUCCESS, -1);
+	if (status != PJ_SUCCESS)
+	{
+		pj_pool_release(pool);
+		return -1;
+	}
 
 	pjmedia_port * null_snd = NULL;
-	status = pjmedia_null_port_create(voxve_var.pool, voxve_var.snd_clock_rate, voxve_var.channel_count,
+	status = pjmedia_null_port_create(pool, voxve_var.snd_clock_rate, voxve_var.channel_count,
 		(voxve_var.snd_clock_rate * voxve_var.audio_frame_ptime / 1000 * voxve_var.channel_count), NBITS, &null_snd);
 	if (status != PJ_SUCCESS)
 	{
 		pjmedia_conf_destroy(p_conf);
+		pj_pool_release(pool);
 		return -1;
 	}
 
@@ -59,11 +71,12 @@ int voxve_conf_create2(unsigned max_slots)
 	pjmedia_port* port0 = pjmedia_conf_get_master_port(p_conf);
 
 	pjmedia_master_port * master_port = NULL;
-	status = pjmedia_master_port_create(voxve_var.pool, null_snd, port0, 0, &master_port);
+	status = pjmedia_master_port_create(pool, null_snd, port0, 0, &master_port);
 	if (status != PJ_SUCCESS)
 	{
 		pjmedia_conf_destroy(p_conf);
 		pjmedia_port_destroy(null_snd);
+		pj_pool_release(pool);
 		return -1;
 	}
 
@@ -73,10 +86,13 @@ int voxve_conf_create2(unsigned max_slots)
 		pjmedia_conf_destroy(p_conf);
 		pjmedia_master_port_destroy(master_port, PJ_FALSE);
 		pjmedia_port_destroy(null_snd);
+		pj_pool_release(pool);
 		return -1;
 	}
 
 	conf_t * conf = new conf_t;
+
+	conf->pool = pool;
 
 	conf->bits_per_sample = NBITS;
 	conf->channel_count = voxve_var.channel_count;
@@ -139,6 +155,8 @@ voxve_status_t voxve_conf_destroy(int conf_id)
 			conf->p_conf = NULL;
 		}
 
+		pj_pool_release(conf->pool);
+
 		delete conf;
 
 		return 0;
@@ -185,7 +203,7 @@ int voxve_conf_addchannel(int conf_id, int channel_id)
 
 	unsigned slot = 0;
 
-	status = pjmedia_conf_add_port(conf->p_conf, voxve_var.pool, stream_port, NULL, &slot);
+	status = pjmedia_conf_add_port(conf->p_conf, channel->pool, stream_port, NULL, &slot);
 	PJ_ASSERT_RETURN(status == PJ_SUCCESS, -1);
 
 	channel->is_conferencing = true;
@@ -302,12 +320,14 @@ voxve_status_t voxve_conf_setsnddev(int conf_id, int cap_dev, int playback_dev)
 	pjmedia_snd_port * snd_port = NULL;
 	status = pjmedia_snd_set_latency(SND_DEFAULT_REC_LATENCY, SND_DEFAULT_PLAY_LATENCY);
 
-	status = pjmedia_snd_port_create(voxve_var.pool, cap_dev, playback_dev, voxve_var.snd_clock_rate, voxve_var.channel_count,
+	//FIXME don't use conf pool
+	status = pjmedia_snd_port_create(conf->pool, cap_dev, playback_dev, voxve_var.snd_clock_rate, voxve_var.channel_count,
 		(voxve_var.snd_clock_rate * voxve_var.audio_frame_ptime / 1000 * voxve_var.channel_count), NBITS, 0, &snd_port);
 	PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
 
 	/* Set AEC */
-	pjmedia_snd_port_set_ec(snd_port, voxve_var.pool, voxve_var.ec_tail_len, 0);
+	//FIXME don't use conf pool
+	pjmedia_snd_port_set_ec(snd_port, conf->pool, voxve_var.ec_tail_len, 0);
 
 	conf->snd_port = snd_port;
 
@@ -343,7 +363,8 @@ voxve_status_t voxve_conf_setnosnddev(int conf_id)
 	if (conf->null_snd == NULL)
 	{
 		pjmedia_port * null_snd = NULL;
-		status = pjmedia_null_port_create(voxve_var.pool, voxve_var.snd_clock_rate, voxve_var.channel_count,
+		//FIXME don't use conf pool
+		status = pjmedia_null_port_create(conf->pool, voxve_var.snd_clock_rate, voxve_var.channel_count,
 			(voxve_var.snd_clock_rate * voxve_var.audio_frame_ptime / 1000 * voxve_var.channel_count), NBITS, &null_snd);
 		if (status != PJ_SUCCESS)
 		{
@@ -354,7 +375,8 @@ voxve_status_t voxve_conf_setnosnddev(int conf_id)
 		pjmedia_port* port0 = pjmedia_conf_get_master_port(conf->p_conf);
 
 		pjmedia_master_port * master_port = NULL;
-		status = pjmedia_master_port_create(voxve_var.pool, null_snd, port0, 0, &master_port);
+		//FIXME don't use conf pool
+		status = pjmedia_master_port_create(conf->pool, null_snd, port0, 0, &master_port);
 		if (status != PJ_SUCCESS)
 		{
 			pjmedia_port_destroy(null_snd);
