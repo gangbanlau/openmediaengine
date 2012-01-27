@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2009-2011 Gang Liu <gangban.lau@gmail.com>
+ * Copyright (C) 2009-2012 Gang Liu <gangban.lau@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,6 +15,10 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
+#ifndef __OPENMEDIAENGINE__
+#error only libopenmediaengine should #include this header
+#endif
+
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
