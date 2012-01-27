@@ -257,3 +257,12 @@ voxve_status_t voxve_dtmf_dial(int channel_id, const char *ascii_digit)
 	else
 		return -1;
 }
+
+void voxve_dump()
+{
+	register_thread();
+
+	pjmedia_endpt_dump(voxve_var.med_endpt);
+
+	pj_pool_factory_dump(&voxve_var.cp.factory, true);
+}

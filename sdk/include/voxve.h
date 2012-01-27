@@ -338,6 +338,11 @@ OPENMEDIAENGINE_DLL_API void voxve_strerror(voxve_status_t statcode, char *buf, 
 
 
 
+/** ############# Debug Helpers ########################### **/
+
+OPENMEDIAENGINE_DLL_API void voxve_dump();
+
+
 
 #ifdef __cplusplus
 }
