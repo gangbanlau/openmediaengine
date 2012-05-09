@@ -155,6 +155,9 @@ pj_status_t stream_create(pj_pool_t *pool, pjmedia_endpt *med_endpt, voxve_strea
     pj_memcpy(&info.fmt, codec_info, sizeof(pjmedia_codec_info));	/* Incoming codec format info. */
 
     info.tx_pt = stream_info->tx_pt;							/* Outgoing codec paylaod type. */
+    if (info.tx_pt >=96)
+    	info.fmt.pt = stream_info->tx_pt;							/* Incoming codec payload type. */
+
 	if (stream_info->ssrc == 0)
 		info.ssrc = pj_rand();										/* RTP SSRC. */
 	else
