@@ -61,6 +61,11 @@ pj_status_t codecs_init(pjmedia_endpt *med_endpt)
     PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
 #endif
 
+#if defined(PJMEDIA_HAS_OPUS_CODEC) && PJMEDIA_HAS_OPUS_CODEC != 0
+    status = pjmedia_codec_opus_init(med_endpt);
+    PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
+#endif
+
     return PJ_SUCCESS;
 }
 
@@ -93,6 +98,11 @@ pj_status_t codecs_deinit(pjmedia_endpt *med_endpt)
 
 #if defined(PJMEDIA_HAS_SILK_CODEC) && PJMEDIA_HAS_SILK_CODEC != 0
     status = pjmedia_codec_silk_deinit();
+    PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
+#endif
+
+#if defined(PJMEDIA_HAS_OPUS_CODEC) && PJMEDIA_HAS_OPUS_CODEC != 0
+    status = pjmedia_codec_opus_deinit();
     PJ_ASSERT_RETURN(status == PJ_SUCCESS, status);
 #endif
 
@@ -156,7 +166,10 @@ pj_status_t stream_create(pj_pool_t *pool, pjmedia_endpt *med_endpt, voxve_strea
 
     info.tx_pt = stream_info->tx_pt;							/* Outgoing codec paylaod type. */
     if (info.tx_pt >=96)
+    {
     	info.fmt.pt = stream_info->tx_pt;							/* Incoming codec payload type. */
+    	info.rx_pt = stream_info->tx_pt;							/* 2012-06-14 */
+    }
 
 	if (stream_info->ssrc == 0)
 		info.ssrc = pj_rand();										/* RTP SSRC. */
