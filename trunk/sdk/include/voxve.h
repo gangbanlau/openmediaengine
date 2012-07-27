@@ -40,6 +40,12 @@ extern "C"
 	#define OPENMEDIAENGINE_DLL_API
 #endif
 
+typedef enum
+{
+	VOXVE_FALSE = 0,
+	VOXVE_TRUE = 1
+} voxve_bool_t;
+
 /** Status code **/
 typedef int voxve_status_t;
 
@@ -243,7 +249,7 @@ OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_stopplayout(int channel);
 
 /** When enable is TRUE this call will stop playout and transmission on a temporary basis. It will not shut down the sockets **/
 /** and not release the ports. The call is resumed again by calling the same call with enable set to FALSE **/
-OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_putonhold(int channel, bool enable);
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_putonhold(int channel, voxve_bool_t enable);
 
 /** Get maximum number of channels supported in this particular version of VoiceEngine.**/
 OPENMEDIAENGINE_DLL_API int voxve_channel_getlimit();

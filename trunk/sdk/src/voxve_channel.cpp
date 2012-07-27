@@ -342,7 +342,7 @@ voxve_status_t voxve_channel_stopplayout(int channelid)
 		return -1;
 }
 
-voxve_status_t voxve_channel_putonhold(int channelid, bool enable)
+voxve_status_t voxve_channel_putonhold(int channelid, voxve_bool_t enable)
 {
 	register_thread();
 
