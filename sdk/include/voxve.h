@@ -148,7 +148,7 @@ typedef enum
 
 /** Init Media Engine **/
 /** You need provide the expiry information here if you get a time limited copy **/
-OPENMEDIAENGINE_DLL_API voxve_status_t voxve_init(int month = 0, int day = 0, int year = 0);
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_init(int month, int day, int year);
 
 /** Unlock this library after init **/
 /** The password string should be embedded in the calling exe-file, and not stored in any resourcefile or registry key **/
@@ -162,7 +162,7 @@ OPENMEDIAENGINE_DLL_API voxve_status_t voxve_authenticate(char *auth_string, int
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_stun_enable(const char * stun_server_addr);
 
 /** Get resolved public address via STUN after channel created **/
-OPENMEDIAENGINE_DLL_API voxve_status_t voxve_stun_get_public_addr(int channel_id, char * addr_buf, unsigned buf_len, unsigned &port);
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_stun_get_public_addr(int channel_id, char * addr_buf, unsigned buf_len, unsigned *port);
 
 
 
