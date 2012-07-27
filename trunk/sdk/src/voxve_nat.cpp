@@ -37,7 +37,7 @@ voxve_status_t voxve_stun_enable(const char * stun_server_addr)
 }
 
 /** Get resolved public address via STUN **/
-voxve_status_t voxve_stun_get_public_addr(int channel_id, char * addr_buf, unsigned buf_len, unsigned &port)
+voxve_status_t voxve_stun_get_public_addr(int channel_id, char * addr_buf, unsigned buf_len, unsigned *port)
 {
 	PJ_ASSERT_RETURN(voxve_var.is_enable_stun, PJ_FALSE);
 
@@ -45,7 +45,7 @@ voxve_status_t voxve_stun_get_public_addr(int channel_id, char * addr_buf, unsig
 	if (channel != NULL)
 	{
 		pj_sockaddr_print(&channel->skinfo.rtp_addr_name, addr_buf, buf_len, 0);
-		port = pj_sockaddr_get_port(&channel->skinfo.rtp_addr_name);
+		*port = pj_sockaddr_get_port(&channel->skinfo.rtp_addr_name);
 
 		return PJ_SUCCESS;
 	}
