@@ -26,6 +26,11 @@
 
 extern struct voxve_data voxve_var;
 
+int voxve_channel_getlimit()
+{
+	return -1;
+}
+
 int voxve_channel_create(unsigned short local_port)
 {
 	return voxve_channel_create2(NULL, local_port);

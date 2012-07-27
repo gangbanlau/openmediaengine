@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2009-2011 Gang Liu <gangban.lau@gmail.com>
+ * Copyright (C) 2009-2012 Gang Liu <gangban.lau@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -106,6 +106,12 @@ static void default_setting()
 
 	voxve_var.audio_frame_ptime = DEFAULT_AUDIO_FRAME_PTIME;	// PJSUA_DEFAULT_AUDIO_FRAME_PTIME	20
 	voxve_var.channel_count = NCHANNELS;
+}
+
+voxve_status_t voxve_getversion(char *version, int buflen)
+{
+	pj_ansi_snprintf(version, buflen, "UNKNOWN");
+	return VOXVE_SUCCESS;
 }
 
 voxve_status_t voxve_init(int month, int day, int year)
