@@ -1,0 +1,242 @@
+Binary files pjproject-2.0.1/pjlib/bin/pjlib-test-arm-unknown-linux-androideabi and pjproject-2.0.1_android/pjlib/bin/pjlib-test-arm-unknown-linux-androideabi differ
+diff -r -u -N -X tmp/diff.exclude pjproject-2.0.1/pjlib/include/pj/config_site.h pjproject-2.0.1_android/pjlib/include/pj/config_site.h
+--- pjproject-2.0.1/pjlib/include/pj/config_site.h	1970-01-01 08:00:00.000000000 +0800
++++ pjproject-2.0.1_android/pjlib/include/pj/config_site.h	2012-07-27 11:07:42.469121643 +0800
+@@ -0,0 +1,8 @@
++#ifndef CONFIG_SITE_H
++#define CONFIG_SITE_H
++
++#define PJ_ANDROID 	1
++
++#include "config_site_sample.h"
++
++#endif
+diff -r -u -N -X tmp/diff.exclude pjproject-2.0.1/pjlib/include/pj/config_site_sample.h pjproject-2.0.1_android/pjlib/include/pj/config_site_sample.h
+--- pjproject-2.0.1/pjlib/include/pj/config_site_sample.h	2010-09-30 12:23:27.000000000 +0800
++++ pjproject-2.0.1_android/pjlib/include/pj/config_site_sample.h	2012-07-27 11:11:07.041620983 +0800
+@@ -21,6 +21,73 @@
+ 
+ 
+ /*
++ * Android sample settings.
++ */
++#if defined(PJ_ANDROID) && PJ_ANDROID!=0
++    /*
++     * PJLIB settings.
++     */
++    #define PJ_HAS_STRICMP_ALNUM		0
++
++    /* Disable floating point support */
++    #define PJ_HAS_FLOATING_POINT		0
++
++    /*
++     * PJMEDIA settings
++     */
++    #define PJMEDIA_HAS_LEGACY_SOUND_API	0
++
++    /* We have our own native backend, OpenSLES */
++    #define PJMEDIA_AUDIO_DEV_HAS_OPENSLES	1
++    #define PJMEDIA_AUDIO_DEV_HAS_PORTAUDIO	0
++    #define PJMEDIA_AUDIO_DEV_HAS_WMME		0
++    #define PJMEDIA_AUDIO_DEV_HAS_COREAUDIO	0
++
++    /* The backend has built-in echo canceller! */
++    //#define PJMEDIA_HAS_SPEEX_AEC  PJ_HAS_FLOATING_POINT  
++    #define PJMEDIA_HAS_SPEEX_AEC 		0
++
++    /* Disable some codecs */
++    #define PJMEDIA_HAS_L16_CODEC		0
++    #define PJMEDIA_HAS_G722_CODEC		0
++
++    /* Use the built-in iLBC codec (yay!) */
++    #define PJMEDIA_HAS_ILBC_CODEC		0
++//    #define PJMEDIA_ILBC_CODEC_USE_COREAUDIO	0
++
++    /* Fine tune Speex's default settings for best performance/quality */
++    #define PJMEDIA_CODEC_SPEEX_DEFAULT_QUALITY	5
++
++    /*
++     * PJSIP settings.
++     */
++
++    /* Increase allowable packet size, just in case */
++    //#define PJSIP_MAX_PKT_LEN			2000
++
++    /*
++     * PJSUA settings.
++     */
++    /* Default codec quality, previously was set to 5, however it is now
++     * set to 4 to make sure pjsua instantiates resampler with small filter.
++     */
++    #define PJSUA_DEFAULT_CODEC_QUALITY		4
++
++    /* Set maximum number of dialog/transaction/calls to minimum */
++    #define PJSIP_MAX_TSX_COUNT 		31
++    #define PJSIP_MAX_DIALOG_COUNT 		31
++    #define PJSUA_MAX_CALLS			4
++
++    /* Other pjsua settings */
++    #define PJSUA_MAX_ACC			4
++    #define PJSUA_MAX_PLAYERS			4
++    #define PJSUA_MAX_RECORDERS			4
++    #define PJSUA_MAX_CONF_PORTS		(PJSUA_MAX_CALLS+2*PJSUA_MAX_PLAYERS)
++    #define PJSUA_MAX_BUDDIES			32
++
++#endif
++
++/*
+  * Typical configuration for WinCE target.
+  */
+ #if defined(PJ_WIN32_WINCE) && PJ_WIN32_WINCE!=0
+diff -r -u -N -X tmp/diff.exclude pjproject-2.0.1/pjlib/include/pj/sock.h pjproject-2.0.1_android/pjlib/include/pj/sock.h
+--- pjproject-2.0.1/pjlib/include/pj/sock.h	2011-10-24 17:28:13.000000000 +0800
++++ pjproject-2.0.1_android/pjlib/include/pj/sock.h	2012-07-27 11:15:52.425621547 +0800
+@@ -27,6 +27,10 @@
+ 
+ #include <pj/types.h>
+ 
++#if defined(PJ_ANDROID) && PJ_ANDROID!=0
++#include <pj/compat/socket.h>		// need "#define sin_zero __pad" at <linux/in.h>
++#endif
++
+ PJ_BEGIN_DECL 
+ 
+ 
+diff -r -u -N -X tmp/diff.exclude pjproject-2.0.1/pjlib/src/pj/os_core_unix.c pjproject-2.0.1_android/pjlib/src/pj/os_core_unix.c
+--- pjproject-2.0.1/pjlib/src/pj/os_core_unix.c	2012-03-30 15:10:13.000000000 +0800
++++ pjproject-2.0.1_android/pjlib/src/pj/os_core_unix.c	2012-07-27 11:26:32.317121526 +0800
+@@ -1091,7 +1091,9 @@
+ 	return PJ_RETURN_OS_ERROR(rc);
+ 
+     if (type == PJ_MUTEX_SIMPLE) {
+-#if (defined(PJ_LINUX) && PJ_LINUX!=0) || \
++#if (defined(PJ_ANDROID) && PJ_ANDROID!=0)
++	rc = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
++#elif (defined(PJ_LINUX) && PJ_LINUX!=0) || \
+     defined(PJ_HAS_PTHREAD_MUTEXATTR_SETTYPE)
+ 	rc = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_FAST_NP);
+ #elif (defined(PJ_RTEMS) && PJ_RTEMS!=0) || \
+Binary files pjproject-2.0.1/pjlib-util/bin/pjlib-util-test-arm-unknown-linux-androideabi and pjproject-2.0.1_android/pjlib-util/bin/pjlib-util-test-arm-unknown-linux-androideabi differ
+Binary files pjproject-2.0.1/pjmedia/bin/pjmedia-test-arm-unknown-linux-androideabi and pjproject-2.0.1_android/pjmedia/bin/pjmedia-test-arm-unknown-linux-androideabi differ
+Binary files pjproject-2.0.1/pjnath/bin/pjnath-test-arm-unknown-linux-androideabi and pjproject-2.0.1_android/pjnath/bin/pjnath-test-arm-unknown-linux-androideabi differ
+Binary files pjproject-2.0.1/pjnath/bin/pjturn-client-arm-unknown-linux-androideabi and pjproject-2.0.1_android/pjnath/bin/pjturn-client-arm-unknown-linux-androideabi differ
+Binary files pjproject-2.0.1/pjnath/bin/pjturn-srv-arm-unknown-linux-androideabi and pjproject-2.0.1_android/pjnath/bin/pjturn-srv-arm-unknown-linux-androideabi differ
+diff -r -u -N -X tmp/diff.exclude pjproject-2.0.1/pjnath/src/pjnath-test/stun_sock_test.c pjproject-2.0.1_android/pjnath/src/pjnath-test/stun_sock_test.c
+--- pjproject-2.0.1/pjnath/src/pjnath-test/stun_sock_test.c	2011-05-05 14:14:19.000000000 +0800
++++ pjproject-2.0.1_android/pjnath/src/pjnath-test/stun_sock_test.c	2012-07-27 11:30:56.949120197 +0800
+@@ -26,7 +26,11 @@
+     WITH_MAPPED	    = 2,
+     WITH_XOR_MAPPED = 4,
+ 
++#if defined(PJ_ANDROID) && PJ_ANDROID!=0
++    _ECHO	    = 8
++#else
+     ECHO	    = 8
++#endif
+ };
+ 
+ /*
+@@ -119,7 +123,11 @@
+ 
+ 	pj_pool_release(pool);
+ 
++#if defined(PJ_ANDROID) && PJ_ANDROID!=0
++    } else if (srv->flag & _ECHO) {
++#else
+     } else if (srv->flag & ECHO) {
++#endif
+ 	/* Send back */
+ 	sent = size;
+ 	pj_activesock_sendto(asock, &srv->send_key, data, &sent, 0, 
+@@ -543,7 +551,11 @@
+     PJ_LOG(3,(THIS_FILE, "    sending/receiving data"));
+ 
+     /* Change server operation mode to echo back data */
++#if defined(PJ_ANDROID) && PJ_ANDROID!=0
++    srv->flag = _ECHO;
++#else
+     srv->flag = ECHO;
++#endif
+ 
+     /* Reset server */
+     srv->rx_cnt = 0;
+Binary files pjproject-2.0.1/pjsip/bin/pjsip-test-arm-unknown-linux-androideabi and pjproject-2.0.1_android/pjsip/bin/pjsip-test-arm-unknown-linux-androideabi differ
+Binary files pjproject-2.0.1/pjsip-apps/bin/pjsua-arm-unknown-linux-androideabi and pjproject-2.0.1_android/pjsip-apps/bin/pjsua-arm-unknown-linux-androideabi differ
+Binary files pjproject-2.0.1/pjsip-apps/bin/pjsystest-arm-unknown-linux-androideabi and pjproject-2.0.1_android/pjsip-apps/bin/pjsystest-arm-unknown-linux-androideabi differ
+Binary files pjproject-2.0.1/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/aectest and pjproject-2.0.1_android/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/aectest differ
+Binary files pjproject-2.0.1/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/auddemo and pjproject-2.0.1_android/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/auddemo differ
+Binary files pjproject-2.0.1/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/aviplay and pjproject-2.0.1_android/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/aviplay differ
+Binary files pjproject-2.0.1/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/confsample and pjproject-2.0.1_android/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/confsample differ
+Binary files pjproject-2.0.1/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/encdec and pjproject-2.0.1_android/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/encdec differ
+Binary files pjproject-2.0.1/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/httpdemo and pjproject-2.0.1_android/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/httpdemo differ
+Binary files pjproject-2.0.1/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/icedemo and pjproject-2.0.1_android/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/icedemo differ
+Binary files pjproject-2.0.1/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/jbsim and pjproject-2.0.1_android/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/jbsim differ
+Binary files pjproject-2.0.1/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/latency and pjproject-2.0.1_android/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/latency differ
+Binary files pjproject-2.0.1/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/level and pjproject-2.0.1_android/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/level differ
+Binary files pjproject-2.0.1/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/mix and pjproject-2.0.1_android/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/mix differ
+Binary files pjproject-2.0.1/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/pcaputil and pjproject-2.0.1_android/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/pcaputil differ
+Binary files pjproject-2.0.1/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/pjsip-perf and pjproject-2.0.1_android/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/pjsip-perf differ
+Binary files pjproject-2.0.1/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/playfile and pjproject-2.0.1_android/pjsip-apps/bin/samples/arm-unknown-linux-androideabi/playfile differ
+diff -r -u -N -X tmp/diff.exclude pjproject-2.0.1/pjsip-apps/src/samples/siprtp.c pjproject-2.0.1_android/pjsip-apps/src/samples/siprtp.c
+--- pjproject-2.0.1/pjsip-apps/src/samples/siprtp.c	2011-05-05 14:14:19.000000000 +0800
++++ pjproject-2.0.1_android/pjsip-apps/src/samples/siprtp.c	2012-07-27 11:33:04.529121305 +0800
+@@ -1133,6 +1133,9 @@
+ 		    PJ_RETURN_OS_ERROR(rc));
+ 	return;
+     }
++#if defined(PJ_ANDROID) && PJ_ANDROID!=0
++#define __sched_priority sched_priority
++#endif
+     tp.__sched_priority = max_prio;
+ 
+     rc = sched_setscheduler(0, POLICY, &tp);
+diff -r -u -N -X tmp/diff.exclude pjproject-2.0.1/user.mak pjproject-2.0.1_android/user.mak
+--- pjproject-2.0.1/user.mak	1970-01-01 08:00:00.000000000 +0800
++++ pjproject-2.0.1_android/user.mak	2012-07-27 11:34:43.565120621 +0800
+@@ -0,0 +1,21 @@
++# You can create user.mak file in PJ root directory to specify
++# additional flags to compiler and linker. For example:
++MY_ANDROID_CPU_ARCH_ABI := ARMv5
++
++MY_ANDROID_ARM_COMMAND_CFLAGS = -fpic -ffunction-sections -funwind-tables -fstack-protector -D__ARM_ARCH_5__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5TE__  -Wno-psabi -mthumb -Os -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -DANDROID  -Wa,--noexecstack -O2 -DNDEBUG -g 
++
++ifneq ($(findstring ARMv,$(MY_ANDROID_CPU_ARCH_ABI)),)
++ifneq ($(findstring ARMv7,$(MY_ANDROID_CPU_ARCH_ABI)),)
++MY_ANDROID_CPU_ARCH_ABI_CFLAGS = -march=armv7-a -mfloat-abi=softfp -mfpu=vfp
++else
++ifneq ($(findstring ARMv6/VFP,$(MY_ANDROID_CPU_ARCH_ABI)),)
++MY_ANDROID_CPU_ARCH_ABI_CFLAGS = -mfloat-abi=softfp -mfpu=vfp
++else
++MY_ANDROID_CPU_ARCH_ABI_CFLAGS = -march=armv5te -mtune=xscale -msoft-float
++endif
++endif
++endif
++
++export CFLAGS += $(MY_ANDROID_ARM_COMMAND_CFLAGS) $(MY_ANDROID_CPU_ARCH_ABI_CFLAGS)
++export LDFLAGS += -lOpenSLES
++
+diff -r -u -N -X tmp/diff.exclude pjproject-2.0.1/user.mak.sample_android pjproject-2.0.1_android/user.mak.sample_android
+--- pjproject-2.0.1/user.mak.sample_android	1970-01-01 08:00:00.000000000 +0800
++++ pjproject-2.0.1_android/user.mak.sample_android	2012-07-27 11:33:47.989121271 +0800
+@@ -0,0 +1,21 @@
++# You can create user.mak file in PJ root directory to specify
++# additional flags to compiler and linker. For example:
++MY_ANDROID_CPU_ARCH_ABI := ARMv5
++
++MY_ANDROID_ARM_COMMAND_CFLAGS = -fpic -ffunction-sections -funwind-tables -fstack-protector -D__ARM_ARCH_5__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5TE__  -Wno-psabi -mthumb -Os -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -DANDROID  -Wa,--noexecstack -O2 -DNDEBUG -g 
++
++ifneq ($(findstring ARMv,$(MY_ANDROID_CPU_ARCH_ABI)),)
++ifneq ($(findstring ARMv7,$(MY_ANDROID_CPU_ARCH_ABI)),)
++MY_ANDROID_CPU_ARCH_ABI_CFLAGS = -march=armv7-a -mfloat-abi=softfp -mfpu=vfp
++else
++ifneq ($(findstring ARMv6/VFP,$(MY_ANDROID_CPU_ARCH_ABI)),)
++MY_ANDROID_CPU_ARCH_ABI_CFLAGS = -mfloat-abi=softfp -mfpu=vfp
++else
++MY_ANDROID_CPU_ARCH_ABI_CFLAGS = -march=armv5te -mtune=xscale -msoft-float
++endif
++endif
++endif
++
++export CFLAGS += $(MY_ANDROID_ARM_COMMAND_CFLAGS) $(MY_ANDROID_CPU_ARCH_ABI_CFLAGS)
++export LDFLAGS += -lOpenSLES
++
