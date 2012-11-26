@@ -110,11 +110,44 @@ typedef struct
 	voxve_codec_info_t fmt;		/* Incoming codec format info. */
 	uint16_t frm_ptime;
 	uint16_t enc_ptime;			/* Encoder ptime, or zero if it's equal to decoder ptime */
-	int tx_pt;
+	int tx_pt;				/* Outgoing codec paylaod type. */
+	int rx_pt;				/* Incoming codec paylaod type. */
 	int tx_event_pt;
 	int rx_event_pt;
 	uint32_t ssrc;
 } voxve_stream_info_t;
+
+typedef struct
+{
+	unsigned 	frame_size;
+	unsigned 	min_prefetch;
+	unsigned 	max_prefetch;
+	unsigned 	burst;
+	unsigned 	prefetch;
+	unsigned 	size;
+	unsigned 	avg_delay;
+	unsigned 	min_delay;
+	unsigned 	max_delay;
+	unsigned 	dev_delay;
+	unsigned 	avg_burst;
+	unsigned 	lost;
+	unsigned 	discard;
+	unsigned 	empty;
+} voxve_stream_stat_jbuf_t;
+
+typedef struct
+{
+	char codec_info[64];
+
+	char remote_addr[80];
+
+	unsigned 	tx_pt;
+	unsigned 	rx_pt;
+
+	unsigned 	tx_ptime;
+
+	voxve_stream_stat_jbuf_t jb_state;
+} voxve_stream_stat_t;
 
 /** Audio codec **/
 typedef enum
@@ -235,6 +268,7 @@ OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_startstream3(int channel_id
 
 /** Stop streaming **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_stopstream(int channel_id);
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_stopstream2(int channel_id, voxve_stream_stat_t *stat);
 
 /** Modify current channel **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_update(int channel_id, voxve_codec_id_t codec,

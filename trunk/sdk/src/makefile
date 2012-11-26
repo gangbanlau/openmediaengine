@@ -4,7 +4,9 @@
 #
 #########################################################
 
-PJSIP_SRC_PATH = /home/gang/pjsip/src/pjproject-2.0-alpha2
+#PJSIP_SRC_PATH = /home/gang/pjsip/src/pjsip_silk/icc/pjproject-2.0-alpha2.silk/
+#PJSIP_SRC_PATH = /home/gang/pjsip/src/pjproject-2.0-alpha2.silk/
+PJSIP_SRC_PATH = /home/gang/pjsip/src/pjsip_opus/pjproject-2.0.silk.opus
 
 include $(PJSIP_SRC_PATH)/build.mak
 include $(PJDIR)/build/common.mak
@@ -16,12 +18,12 @@ include $(PJSIP_SRC_PATH)/build/common.mak
 OBJ_DIR = ../build
 SDK_INC_DIR = ../include
 
-export _CFLAGS = -D__OPENMEDIAENGINE__ -Wall -pipe -O2 -g -DNDEBUG -I$(SDK_INC_DIR) $(PJ_CFLAGS) $(CFLAGS)
-export _CXXFLAGS = -D__OPENMEDIAENGINE__ -Wall -pipe -O2 -g -DNDEBUG -I$(SDK_INC_DIR) $(PJ_CXXFLAGS)
+export _CFLAGS = -D__OPENMEDIAENGINE__ -O3 -g -fomit-frame-pointer -fno-strict-aliasing -Wall -DNDEBUG -D_REENTRANT -I$(SDK_INC_DIR) $(PJ_CFLAGS) $(CFLAGS)
+export _CXXFLAGS = -D__OPENMEDIAENGINE__ -O3 -g -fomit-frame-pointer -fno-strict-aliasing -Wall -DNDEBUG -D_REENTRANT -I$(SDK_INC_DIR) $(PJ_CXXFLAGS)
 export _LDFLAGS = $(PJ_LDFLAGS) $(PJ_LDLIBS) $(LDFLAGS)
 
-CC = gcc
-CXX = g++
+CC = $CC
+#CXX = icpc
 
 TARGET = libopenmediaengine.a
 
