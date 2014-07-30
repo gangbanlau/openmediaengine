@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Gang Liu <gangban.lau@gmail.com>
+ * Copyright (C) 2011-2012 Gang Liu <gangban.lau@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -193,6 +193,96 @@ voxve_status_t channel_startstream(int channel_id, const pjmedia_codec_info * co
 	}
 }
 
+static voxve_status_t channel_dumpstream(channel_t *channel, voxve_stream_stat_t *pstat)
+{
+	if (channel == NULL || channel->stream == NULL || pstat == NULL)
+		return -1;
+
+	pj_status_t status;
+
+	// stream media info
+	pjmedia_stream_info info;
+	status = pjmedia_stream_get_info(channel->stream, &info);
+	if (status == PJ_SUCCESS)
+	{
+		pj_ansi_snprintf(pstat->codec_info, sizeof(pstat->codec_info), " %.*s @%dkHz",
+				(int)info.fmt.encoding_name.slen,
+				info.fmt.encoding_name.ptr,
+				info.fmt.clock_rate / 1000);
+
+		pstat->rx_pt = info.fmt.pt;
+		pstat->tx_pt = info.tx_pt;
+
+		/*
+		pstat->tx_ptime = info.param->setting.frm_per_pkt*
+			info.param->info.frm_ptime;
+		 */
+	}
+
+	pjmedia_transport_info tp_info;
+	pjmedia_transport_info_init(&tp_info);
+	pjmedia_transport *p_tp = pjmedia_stream_get_transport(channel->stream);
+	status = pjmedia_transport_get_info (p_tp, &tp_info);
+	if (status == PJ_SUCCESS)
+	{
+		const char *rem_addr;
+		if (pj_sockaddr_has_addr(&tp_info.src_rtp_name))
+		{
+			rem_addr = pj_sockaddr_print(&tp_info.src_rtp_name, pstat->remote_addr,
+					sizeof(pstat->remote_addr), 3);
+		}
+		else
+		{
+			pj_ansi_snprintf(pstat->remote_addr, sizeof(pstat->remote_addr), "-");
+			rem_addr = pstat->remote_addr;
+		}
+	}
+
+	// jbuf info
+	pjmedia_jb_state state;
+	status = pjmedia_stream_get_stat_jbuf(channel->stream, &state);
+	if (status == PJ_SUCCESS)
+	{
+		pstat->jb_state.frame_size = state.frame_size;
+		pstat->jb_state.min_prefetch = state.min_prefetch;
+		pstat->jb_state.max_prefetch = state.max_prefetch;
+		pstat->jb_state.burst = state.burst;
+		pstat->jb_state.prefetch = state.prefetch;
+		pstat->jb_state.size = state.size;
+		pstat->jb_state.avg_delay = state.avg_delay;
+		pstat->jb_state.min_delay = state.min_delay;
+		pstat->jb_state.max_delay = state.max_delay;
+		pstat->jb_state.dev_delay = state.dev_delay;
+		pstat->jb_state.avg_burst = state.avg_burst;
+		pstat->jb_state.lost = state.lost;
+		pstat->jb_state.discard = state.discard;
+		pstat->jb_state.empty = state.empty;
+	}
+
+	// RTCP
+	pjmedia_rtcp_stat rtcp_stat;
+	status = pjmedia_stream_get_stat(channel->stream, &rtcp_stat);
+	if (status == PJ_SUCCESS)
+	{
+		pstat->rx_pkt = rtcp_stat.rx.pkt;
+		pstat->tx_pkt = rtcp_stat.tx.pkt;
+	}
+
+	return VOXVE_SUCCESS;
+}
+
+voxve_status_t voxve_channel_dumpstream(int channel_id, voxve_stream_stat_t *pstat)
+{
+	register_thread();
+
+	channel_t *channel = channel_find(channel_id);
+
+	if (channel == NULL)
+		return -1;
+
+	return channel_dumpstream(channel, pstat);
+}
+
 voxve_status_t voxve_channel_stopstream(int channel_id)
 {
 	return voxve_channel_stopstream2(channel_id, NULL);
@@ -215,71 +305,13 @@ voxve_status_t voxve_channel_stopstream2(int channel_id, voxve_stream_stat_t *ps
 	if (channel->stream != NULL)
 	{
 		if (pstat != NULL)
-		{
-			//stream media info
-			pjmedia_stream_info info;
-			pj_status_t status = pjmedia_stream_get_info(channel->stream, &info);
-			if (status == PJ_SUCCESS)
-			{
-		        pj_ansi_snprintf(pstat->codec_info, sizeof(pstat->codec_info), " %.*s @%dkHz",
-		                 (int)info.fmt.encoding_name.slen,
-		                 info.fmt.encoding_name.ptr,
-		                 info.fmt.clock_rate / 1000);
+			channel_dumpstream(channel, pstat);
 
-				pstat->rx_pt = info.fmt.pt;
-
-				pstat->tx_pt = info.tx_pt;
-				/*
-				pstat->tx_ptime = info.param->setting.frm_per_pkt*
-		                 info.param->info.frm_ptime;
-		                 */
-			}
-
-			pjmedia_transport_info tp_info;
-			pjmedia_transport_info_init(&tp_info);
-			pjmedia_transport *p_tp = pjmedia_stream_get_transport(channel->stream);
-			status = pjmedia_transport_get_info (p_tp, &tp_info);
-			if (status == PJ_SUCCESS)
-			{
-				const char *rem_addr;
-			    if (pj_sockaddr_has_addr(&tp_info.src_rtp_name))
-			    {
-			        rem_addr = pj_sockaddr_print(&tp_info.src_rtp_name, pstat->remote_addr,
-			                     sizeof(pstat->remote_addr), 3);
-			    } else {
-			        pj_ansi_snprintf(pstat->remote_addr, sizeof(pstat->remote_addr), "-");
-			        rem_addr = pstat->remote_addr;
-			    }
-			}
-
-			// 1, jbuf info
-			pjmedia_jb_state state;
-			status = pjmedia_stream_get_stat_jbuf(channel->stream, &state);
-			if (status == PJ_SUCCESS)
-			{
-				pstat->jb_state.frame_size = state.frame_size;
-				pstat->jb_state.min_prefetch = state.min_prefetch;
-				pstat->jb_state.max_prefetch = state.max_prefetch;
-				pstat->jb_state.burst = state.burst;
-				pstat->jb_state.prefetch = state.prefetch;
-				pstat->jb_state.size = state.size;
-				pstat->jb_state.avg_delay = state.avg_delay;
-				pstat->jb_state.min_delay = state.min_delay;
-				pstat->jb_state.max_delay = state.max_delay;
-				pstat->jb_state.dev_delay = state.dev_delay;
-				pstat->jb_state.avg_burst = state.avg_burst;
-				pstat->jb_state.lost = state.lost;
-				pstat->jb_state.discard = state.discard;
-				pstat->jb_state.empty = state.empty;
-			}
-			// 2, RTCP
-			// TODO
-		}
 		pjmedia_stream_destroy(channel->stream);
 		channel->stream = NULL;
 	}
 
-	return 0;
+	return VOXVE_SUCCESS;
 }
 
 voxve_status_t voxve_channel_delete(int channelid)
