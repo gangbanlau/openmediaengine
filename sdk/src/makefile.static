@@ -22,22 +22,22 @@ export _CFLAGS = -D__OPENMEDIAENGINE__ -O3 -g -fomit-frame-pointer -fno-strict-a
 export _CXXFLAGS = -D__OPENMEDIAENGINE__ -O3 -g -fomit-frame-pointer -fno-strict-aliasing -Wall -DNDEBUG -D_REENTRANT -I$(SDK_INC_DIR) $(PJ_CXXFLAGS)
 export _LDFLAGS = $(PJ_LDFLAGS) $(PJ_LDLIBS) $(LDFLAGS)
 
-#CC = $CC
+CC = $CC
 #CXX = icpc
 
-TARGET = libopenmediaengine.so
+TARGET = libopenmediaengine.a
 
 %.o: %.c
-	$(PJ_CC) $(_CFLAGS) -c $< -o $(OBJ_DIR)/$@
+	$(CC) $(_CFLAGS) -c $< -o $(OBJ_DIR)/$@
 
 %.o: %.cpp
-	$(PJ_CXX) $(_CXXFLAGS) -c $< -o $(OBJ_DIR)/$@
+	$(CXX) $(_CXXFLAGS) -c $< -o $(OBJ_DIR)/$@
 
 SOURCES = $(wildcard *.c *.cpp)
 OBJS = $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SOURCES)))
 
 $(TARGET) : $(OBJS)
-	$(PJ_CXX) -shared -o $(OBJ_DIR)/$@ `for X in $(OBJS) ; do echo "$(OBJ_DIR)/$$X"; done` $(_CXXFLAGS) $(_LDFLAGS)
+	ar rcs $(OBJ_DIR)/$(TARGET) `for X in $(OBJS) ; do echo "$(OBJ_DIR)/$$X"; done`
 
 all: $(TARGET)
 
