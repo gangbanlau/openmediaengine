@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2009-2011 Gang Liu <gangban.lau@gmail.com>
+ * Copyright (C) 2009-2012 Gang Liu <gangban.lau@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -141,10 +141,13 @@ typedef struct
 
 	char remote_addr[80];
 
-	unsigned 	tx_pt;
-	unsigned 	rx_pt;
+	unsigned 	tx_pt;				/* Outgoing codec paylaod type. */
+	unsigned 	rx_pt;				/* Incoming codec paylaod type. */
 
 	unsigned 	tx_ptime;
+
+	unsigned	rx_pkt;
+	unsigned	tx_pkt;
 
 	voxve_stream_stat_jbuf_t jb_state;
 } voxve_stream_stat_t;
@@ -265,6 +268,9 @@ OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_startstream2(int channel_id
 		unsigned int ptime, unsigned int rtp_ssrc, const char * remote_ip, unsigned short remote_port, voxve_stream_dir_t dir);
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_startstream3(int channel_id, const char* codec, int rtp_dynamic_payload,
 		unsigned int ptime, int telephone_event_payload, unsigned int rtp_ssrc, const char * remote_ip, unsigned short remote_port, voxve_stream_dir_t dir);
+
+/** Dump stream info **/
+OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_dumpstream(int channel_id, voxve_stream_stat_t *pstat);
 
 /** Stop streaming **/
 OPENMEDIAENGINE_DLL_API voxve_status_t voxve_channel_stopstream(int channel_id);
